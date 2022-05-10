@@ -9,6 +9,7 @@
 
 #define isRowVector(x) (x.rows == 1)
 #define isColumnVector(x) (x.cols == 1)
+#define MAX(a,b) a>=b?a:b
 
 struct BinMatrix{
     int rows;
@@ -421,9 +422,45 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
  */
 int swapRows(BinMatrix* m, int r1, int r2){
 
+    if (r1 <0 || r1 > m->rows || r2<0 || r2>m->rows){
+        printf("Invalid rows to swap %d and %d for matrix of size (%d,%d)\n", r1, r2, m->rows,m->cols);
+    }
+
     int row_len=m->cols;
 
-    int r1_array_index = row_len*(r1+1) / (8*sizeof(unsigned long));
-    int r2_array_index = row_len*(r2+1) / (8*sizeof(unsigned long));
+    unsigned long bitmask=0, bitmask1, bitmask2;
 
+    for (int i=0;i<row_len;++i){
+        bitmask |= (1<<i);
+    }
+
+    int r1_array_index = row_len*(r1) / (8*sizeof(unsigned long));
+    int r2_array_index = row_len*(r2) / (8*sizeof(unsigned long));
+    int r1_bit_index = (row_len*r1) % (8*sizeof(unsigned long));
+    int r2_bit_index = (row_len*r2) % (8*sizeof(unsigned long));
+
+    bitmask1 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r1_bit_index );
+    bitmask2 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r2_bit_index );
+
+    // Extract the two rows
+    unsigned long exctracted_row1 = m->data[r1_array_index] & bitmask1;
+    unsigned long exctracted_row2 = m->data[r2_array_index] & bitmask2;
+
+    if (r1 < r2 )
+    {
+        exctracted_row2 = exctracted_row2 << row_len*(r2-r1);
+        exctracted_row1 = exctracted_row1 >> row_len*(r2-r1);
+    }
+
+    if (r2_bit_index < r1_bit_index)
+    {
+        exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
+        exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
+    }
+    printf("%lu\n",exctracted_row1);
+    m->data[r1_array_index] = ( m->data[r1_array_index] & (-1UL ^ bitmask1) );
+    m->data[r1_array_index] |= exctracted_row2;
+    m->data[r2_array_index] = ( m->data[r2_array_index] & (-1UL ^ bitmask2) ) | exctracted_row1;
+
+    return 0;
 }
