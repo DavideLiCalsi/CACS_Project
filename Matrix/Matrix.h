@@ -262,7 +262,6 @@ Matrix* identityMatrix(int k){
     }
 
     return res;
-
 }
 
 /**
