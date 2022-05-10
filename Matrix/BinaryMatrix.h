@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MATRIX_SUCCESS 0
 #define MATRIX_FAILURE 1
@@ -27,6 +28,30 @@ struct BinMatrix{
 };
 
 typedef struct BinMatrix BinMatrix;
+
+/**
+ * @brief Compare the two matrices
+ * 
+ * @param m1 First matrix
+ * @param m2 Second matrix
+ * @return true The matrices are equal
+ * @return false They are different
+ */
+bool compareMatrices(BinMatrix m1, BinMatrix m2){
+
+    if (m1.cols!=m2.cols || m1.rows != m2.rows)
+        return false;
+
+    int needed_ulongs = 1 + (m1.rows * m2.cols) / (8*sizeof(unsigned long));
+
+    for (int i=0; i<needed_ulongs;++i){
+
+        if (m1.data[i] != m2.data[i])
+            return false;
+    }
+
+    return true;
+}
 
 /**
  * @brief Get the Element of indexes (i,j)
@@ -553,6 +578,9 @@ char determinant(BinMatrix m){
             }
         }
 
+        /*
+        Sum rows to bring the matrix in inferior triangular form
+        */
         for (i=j+1; i<m.rows;++i ){
 
             if ( getElement(m,i,j) == 1 )
@@ -560,10 +588,82 @@ char determinant(BinMatrix m){
         }
     }
 
+    /*
+    If there is a 0 on the main diagonal, the determinant is 0
+    */
     for (i=0;i<m.rows;++i){
         if (getElement(m,i,i) == 0)
             return 0;
     }
 
     return 1;
+}
+
+/**
+ * @brief Computes the inverse of matrix m 
+ * through the Gauss-Jordan elimination
+ * 
+ * @param m The matrix to invert
+ * @return BinMatrix* The inverse matrix
+ */
+BinMatrix* inverse(BinMatrix m){
+
+    int i,j,k;
+
+    if (!isSquareMatrix(m)){
+        printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
+        return NULL;
+    }
+
+    // Build the augmented matrix by concatenating the matrix to invert
+    // and the Identity
+    BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
+    
+    for (j=0; j<m.cols;++j){
+
+        k=j;
+
+        /*
+        With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
+        */
+        for (i=j; i<m.rows;++i){
+            
+            if ( getElement(*augmented,i,j) == 1 && k !=i){
+                swapRows(augmented,k,i);
+                k++;
+            }
+        }
+
+        /*
+        Sum rows to bring the matrix in inferior triangular form
+        */
+        for (i=0; i<m.rows;++i ){
+
+            if ( i!=j && getElement(*augmented,i,j) == 1 )
+                addRows(augmented,i,j);
+        }
+    }
+
+    printMatrix(*augmented);
+
+    BinMatrix* inv = (BinMatrix*) ( malloc(sizeof(BinMatrix)) );
+    inv->rows=m.rows;
+    inv->cols=m.cols;
+    inv->data = (unsigned long*) ( malloc( sizeof(unsigned long) * inv->rows * inv->cols ) );
+
+    /*
+    This loop copies bits one by one from the augmented matrix
+    to the matrix to return.
+    NOTE: this is highly inefficient, should be optimized later
+    */
+    for (i=0; i<m.rows;++i){
+
+        for (j=m.cols; j<augmented->cols; ++j){
+
+            putElement(inv,i,j-m.cols, getElement(*augmented,i,j));
+        }
+    }
+
+    destroyMatrix(augmented);
+    return inv;
 }
