@@ -7,9 +7,18 @@
 #define MATRIX_FAILURE 1
 #define MATRIX_INVALID_ELEMENT 2
 
+/**
+ * @brief Macros to manage Matrix checks
+ * 
+ */
 #define isRowVector(x) (x.rows == 1)
 #define isColumnVector(x) (x.cols == 1)
-#define MAX(a,b) a>=b?a:b
+#define indexWithinBounds(m,i,j) (i<m.rows && i>=0 && j<m.cols && j>=0)
+#define indexWithinBoundsPtr(m,i,j) (i<m->rows && i>=0 && j<m->cols && j>=0)
+#define indexOutOfBounds(m,i,j) (i>=m.rows || i<0 && j>=m.cols && j<0)
+#define indexOutOfBoundsPtr(m,i,j) (i>=m->rows && i<0 && j>=m->cols && j<0)
+#define isSquareMatrix(m) (m.cols==m.rows)
+#define isSquareMatrixPtr(m) (m->cols==m->rows)
 
 struct BinMatrix{
     int rows;
@@ -29,7 +38,7 @@ typedef struct BinMatrix BinMatrix;
  */
 char getElement(BinMatrix m, int i, int j){
 
-    if ( 0<=i && i<= m.rows-1 && 0<=j && j<=m.cols -1 ){
+    if ( indexWithinBounds(m,i,j) ){
 
         int array_index= (m.cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m.cols * i + j) % (8*sizeof(unsigned long));
@@ -58,7 +67,7 @@ char getElement(BinMatrix m, int i, int j){
  */
 int putElement(BinMatrix* m, int i, int j, int val){
 
-    if ( 0<=i && i<= m->rows-1 && 0<=j && j<=m->cols -1 ){
+    if ( indexWithinBoundsPtr(m,i,j) ){
 
         int array_index= (m->cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m->cols * i + j) % (8*sizeof(unsigned long));
@@ -424,6 +433,7 @@ int swapRows(BinMatrix* m, int r1, int r2){
 
     if (r1 <0 || r1 > m->rows || r2<0 || r2>m->rows){
         printf("Invalid rows to swap %d and %d for matrix of size (%d,%d)\n", r1, r2, m->rows,m->cols);
+        return MATRIX_INVALID_ELEMENT;
     }
 
     int row_len=m->cols;
@@ -457,10 +467,103 @@ int swapRows(BinMatrix* m, int r1, int r2){
         exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
         exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
     }
-    printf("%lu\n",exctracted_row1);
+
     m->data[r1_array_index] = ( m->data[r1_array_index] & (-1UL ^ bitmask1) );
     m->data[r1_array_index] |= exctracted_row2;
     m->data[r2_array_index] = ( m->data[r2_array_index] & (-1UL ^ bitmask2) ) | exctracted_row1;
 
     return 0;
+}
+
+/**
+ * @brief Adds row r2 to row r1 in matrix m.
+ * In this context, adding is binary (i.e. xor)
+ * 
+ * @param m Pointer to the matrix to manipulate
+ * @param r1 Row to increment
+ * @param r2 Row to add
+ * @return int 
+ */
+int addRows(BinMatrix* m, int r1, int r2){
+
+    // TODO add check of row indexes
+    int row_len=m->cols;
+
+    unsigned long bitmask=0, bitmask1, bitmask2;
+
+    for (int i=0;i<row_len;++i){
+        bitmask |= (1<<i);
+    }
+
+    int r1_array_index = row_len*(r1) / (8*sizeof(unsigned long));
+    int r2_array_index = row_len*(r2) / (8*sizeof(unsigned long));
+    int r1_bit_index = (row_len*r1) % (8*sizeof(unsigned long));
+    int r2_bit_index = (row_len*r2) % (8*sizeof(unsigned long));
+
+    bitmask1 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r1_bit_index );
+    bitmask2 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r2_bit_index );
+
+    // Extract the two rows
+    unsigned long exctracted_row1 = m->data[r1_array_index] & bitmask1;
+    unsigned long exctracted_row2 = m->data[r2_array_index] & bitmask2;
+
+    if (r1 < r2 )
+    {
+        exctracted_row2 = exctracted_row2 << row_len*(r2-r1);
+    }
+
+    if (r2_bit_index < r1_bit_index)
+    {
+        exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
+        exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
+    }
+
+    m->data[r1_array_index] ^= exctracted_row2;
+
+}
+
+/**
+ * @brief Inefficient recursive procedure
+ * to compute the determinant of matrix m
+ * 
+ * @param m 
+ * @return char 
+ */
+char determinant(BinMatrix m){
+
+    int i,j,k;
+
+    if (!isSquareMatrix(m)){
+        printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    for (j=0; j<m.cols;++j){
+
+        k=j;
+
+        /*
+        With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
+        */
+        for (i=j; i<m.rows;++i){
+            
+            if ( getElement(m,i,j) == 1 && k !=i){
+                swapRows(&m,k,i);
+                k++;
+            }
+        }
+
+        for (i=j+1; i<m.rows;++i ){
+
+            if ( getElement(m,i,j) == 1 )
+                addRows(&m,i,j);
+        }
+    }
+
+    for (i=0;i<m.rows;++i){
+        if (getElement(m,i,i) == 0)
+            return 0;
+    }
+
+    return 1;
 }
