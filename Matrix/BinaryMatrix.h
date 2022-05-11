@@ -2,13 +2,24 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MATRIX_SUCCESS 0
 #define MATRIX_FAILURE 1
 #define MATRIX_INVALID_ELEMENT 2
 
+/**
+ * @brief Macros to manage Matrix checks
+ * 
+ */
 #define isRowVector(x) (x.rows == 1)
 #define isColumnVector(x) (x.cols == 1)
+#define indexWithinBounds(m,i,j) (i<m.rows && i>=0 && j<m.cols && j>=0)
+#define indexWithinBoundsPtr(m,i,j) (i<m->rows && i>=0 && j<m->cols && j>=0)
+#define indexOutOfBounds(m,i,j) (i>=m.rows || i<0 && j>=m.cols && j<0)
+#define indexOutOfBoundsPtr(m,i,j) (i>=m->rows && i<0 && j>=m->cols && j<0)
+#define isSquareMatrix(m) (m.cols==m.rows)
+#define isSquareMatrixPtr(m) (m->cols==m->rows)
 
 struct BinMatrix{
     int rows;
@@ -17,6 +28,30 @@ struct BinMatrix{
 };
 
 typedef struct BinMatrix BinMatrix;
+
+/**
+ * @brief Compare the two matrices
+ * 
+ * @param m1 First matrix
+ * @param m2 Second matrix
+ * @return true The matrices are equal
+ * @return false They are different
+ */
+bool compareMatrices(BinMatrix m1, BinMatrix m2){
+
+    if (m1.cols!=m2.cols || m1.rows != m2.rows)
+        return false;
+
+    int needed_ulongs = 1 + (m1.rows * m2.cols) / (8*sizeof(unsigned long));
+
+    for (int i=0; i<needed_ulongs;++i){
+
+        if (m1.data[i] != m2.data[i])
+            return false;
+    }
+
+    return true;
+}
 
 /**
  * @brief Get the Element of indexes (i,j)
@@ -28,7 +63,7 @@ typedef struct BinMatrix BinMatrix;
  */
 char getElement(BinMatrix m, int i, int j){
 
-    if ( 0<=i && i<= m.rows-1 && 0<=j && j<=m.cols -1 ){
+    if ( indexWithinBounds(m,i,j) ){
 
         int array_index= (m.cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m.cols * i + j) % (8*sizeof(unsigned long));
@@ -57,7 +92,7 @@ char getElement(BinMatrix m, int i, int j){
  */
 int putElement(BinMatrix* m, int i, int j, int val){
 
-    if ( 0<=i && i<= m->rows-1 && 0<=j && j<=m->cols -1 ){
+    if ( indexWithinBoundsPtr(m,i,j) ){
 
         int array_index= (m->cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m->cols * i + j) % (8*sizeof(unsigned long));
@@ -421,9 +456,214 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
  */
 int swapRows(BinMatrix* m, int r1, int r2){
 
+    if (r1 <0 || r1 > m->rows || r2<0 || r2>m->rows){
+        printf("Invalid rows to swap %d and %d for matrix of size (%d,%d)\n", r1, r2, m->rows,m->cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
     int row_len=m->cols;
 
-    int r1_array_index = row_len*(r1+1) / (8*sizeof(unsigned long));
-    int r2_array_index = row_len*(r2+1) / (8*sizeof(unsigned long));
+    unsigned long bitmask=0, bitmask1, bitmask2;
 
+    for (int i=0;i<row_len;++i){
+        bitmask |= (1<<i);
+    }
+
+    int r1_array_index = row_len*(r1) / (8*sizeof(unsigned long));
+    int r2_array_index = row_len*(r2) / (8*sizeof(unsigned long));
+    int r1_bit_index = (row_len*r1) % (8*sizeof(unsigned long));
+    int r2_bit_index = (row_len*r2) % (8*sizeof(unsigned long));
+
+    bitmask1 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r1_bit_index );
+    bitmask2 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r2_bit_index );
+
+    // Extract the two rows
+    unsigned long exctracted_row1 = m->data[r1_array_index] & bitmask1;
+    unsigned long exctracted_row2 = m->data[r2_array_index] & bitmask2;
+
+    if (r1 < r2 )
+    {
+        exctracted_row2 = exctracted_row2 << row_len*(r2-r1);
+        exctracted_row1 = exctracted_row1 >> row_len*(r2-r1);
+    }
+
+    if (r2_bit_index < r1_bit_index)
+    {
+        exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
+        exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
+    }
+
+    m->data[r1_array_index] = ( m->data[r1_array_index] & (-1UL ^ bitmask1) );
+    m->data[r1_array_index] |= exctracted_row2;
+    m->data[r2_array_index] = ( m->data[r2_array_index] & (-1UL ^ bitmask2) ) | exctracted_row1;
+
+    return 0;
+}
+
+/**
+ * @brief Adds row r2 to row r1 in matrix m.
+ * In this context, adding is binary (i.e. xor)
+ * 
+ * @param m Pointer to the matrix to manipulate
+ * @param r1 Row to increment
+ * @param r2 Row to add
+ * @return int 
+ */
+int addRows(BinMatrix* m, int r1, int r2){
+
+    // TODO add check of row indexes
+    int row_len=m->cols;
+
+    unsigned long bitmask=0, bitmask1, bitmask2;
+
+    for (int i=0;i<row_len;++i){
+        bitmask |= (1<<i);
+    }
+
+    int r1_array_index = row_len*(r1) / (8*sizeof(unsigned long));
+    int r2_array_index = row_len*(r2) / (8*sizeof(unsigned long));
+    int r1_bit_index = (row_len*r1) % (8*sizeof(unsigned long));
+    int r2_bit_index = (row_len*r2) % (8*sizeof(unsigned long));
+
+    bitmask1 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r1_bit_index );
+    bitmask2 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r2_bit_index );
+
+    // Extract the two rows
+    unsigned long exctracted_row1 = m->data[r1_array_index] & bitmask1;
+    unsigned long exctracted_row2 = m->data[r2_array_index] & bitmask2;
+
+    if (r1 < r2 )
+    {
+        exctracted_row2 = exctracted_row2 << row_len*(r2-r1);
+    }
+
+    if (r2_bit_index < r1_bit_index)
+    {
+        exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
+        exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
+    }
+
+    m->data[r1_array_index] ^= exctracted_row2;
+
+}
+
+/**
+ * @brief Inefficient recursive procedure
+ * to compute the determinant of matrix m
+ * 
+ * @param m 
+ * @return char 
+ */
+char determinant(BinMatrix m){
+
+    int i,j,k;
+
+    if (!isSquareMatrix(m)){
+        printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    for (j=0; j<m.cols;++j){
+
+        k=j;
+
+        /*
+        With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
+        */
+        for (i=j; i<m.rows;++i){
+            
+            if ( getElement(m,i,j) == 1 && k !=i){
+                swapRows(&m,k,i);
+                k++;
+            }
+        }
+
+        /*
+        Sum rows to bring the matrix in inferior triangular form
+        */
+        for (i=j+1; i<m.rows;++i ){
+
+            if ( getElement(m,i,j) == 1 )
+                addRows(&m,i,j);
+        }
+    }
+
+    /*
+    If there is a 0 on the main diagonal, the determinant is 0
+    */
+    for (i=0;i<m.rows;++i){
+        if (getElement(m,i,i) == 0)
+            return 0;
+    }
+
+    return 1;
+}
+
+/**
+ * @brief Computes the inverse of matrix m 
+ * through the Gauss-Jordan elimination
+ * 
+ * @param m The matrix to invert
+ * @return BinMatrix* The inverse matrix
+ */
+BinMatrix* inverse(BinMatrix m){
+
+    int i,j,k;
+
+    if (!isSquareMatrix(m)){
+        printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
+        return NULL;
+    }
+
+    // Build the augmented matrix by concatenating the matrix to invert
+    // and the Identity
+    BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
+    
+    for (j=0; j<m.cols;++j){
+
+        k=j;
+
+        /*
+        With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
+        */
+        for (i=j; i<m.rows;++i){
+            
+            if ( getElement(*augmented,i,j) == 1 && k !=i){
+                swapRows(augmented,k,i);
+                k++;
+            }
+        }
+
+        /*
+        Sum rows to bring the matrix in inferior triangular form
+        */
+        for (i=0; i<m.rows;++i ){
+
+            if ( i!=j && getElement(*augmented,i,j) == 1 )
+                addRows(augmented,i,j);
+        }
+    }
+
+    printMatrix(*augmented);
+
+    BinMatrix* inv = (BinMatrix*) ( malloc(sizeof(BinMatrix)) );
+    inv->rows=m.rows;
+    inv->cols=m.cols;
+    inv->data = (unsigned long*) ( malloc( sizeof(unsigned long) * inv->rows * inv->cols ) );
+
+    /*
+    This loop copies bits one by one from the augmented matrix
+    to the matrix to return.
+    NOTE: this is highly inefficient, should be optimized later
+    */
+    for (i=0; i<m.rows;++i){
+
+        for (j=m.cols; j<augmented->cols; ++j){
+
+            putElement(inv,i,j-m.cols, getElement(*augmented,i,j));
+        }
+    }
+
+    destroyMatrix(augmented);
+    return inv;
 }
