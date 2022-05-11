@@ -1,3 +1,6 @@
+#ifndef BINARY_MATRIX_HEADER
+#define BINARY_MATRIX_HEADER
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -96,7 +99,7 @@ int putElement(BinMatrix* m, int i, int j, int val){
 
         int array_index= (m->cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m->cols * i + j) % (8*sizeof(unsigned long));
-        array_selector = 8*sizeof(unsigned long)- array_selector - 1;
+        array_selector = 8*sizeof(unsigned long) - array_selector - 1;
         unsigned long selector = 1UL << array_selector;
 
         switch (val)
@@ -667,3 +670,5 @@ BinMatrix* inverse(BinMatrix m){
     destroyMatrix(augmented);
     return inv;
 }
+
+#endif
