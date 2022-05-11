@@ -4,9 +4,16 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define MAX(a,b) (a>b?a:b)
+
 #define MATRIX_SUCCESS 0
 #define MATRIX_FAILURE 1
 #define MATRIX_INVALID_ELEMENT 2
+
+#define MATRIX_SAMPLE_ROWS 0
+#define MATRIX_SAMPLE_COLUMNS 1
+
+#define MATRIX_INVALID_WEIGHT -1
 
 /**
  * @brief Macros to manage Matrix checks
@@ -669,40 +676,116 @@ BinMatrix* inverse(BinMatrix m){
 }
 
 /**
- * @brief Subsample some rows from a matrix
+ * @brief Subsample some rows or columns from a matrix
  * 
- * @param indexes Array of rows to sample
+ * @param indexes Array of rows(columns) to sample
  * @param len Length of the array
  * @param m Matrix to sample
- * @return BinMatrix* Matrix of the sampled rows, NULL for error
+ * @param mode Specify what to sample, rows or columns
+ * @return BinMatrix* Matrix of the sampled rows(columns), NULL for error
+ * 
+ * TODO: this implementation is very naive and slow. Optimize later
  */
-BinMatrix* sampleRows(int* indexes, int len, BinMatrix m){
-
-    if ( len > m.rows ){
-        printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
-        return NULL;
-    }
-
-    int i;
+BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
 
     BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
-    res->rows=len;
-    res->cols=m.cols;
+    int i,j;
+    int needed_ulong;
 
-    int needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
-    res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
+    switch (mode)
+    {
 
-    const int row_len = m.cols;
-    int array_index, bit_index;
-    unsigned long extracted_line;
+    case MATRIX_SAMPLE_ROWS:
+        if ( len > m.rows ){
+            printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+            free(res);
+            return NULL;
+        }
 
-    for (i=0,array_index=0, bit_index=0; i<len;++i){
+        res->rows=len;
+        res->cols=m.cols;
 
+        needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
 
-        res->data[array_index] ^= extracted_line;
-        bit_index+=row_len;
-        array_index = bit_index % (8*sizeof(unsigned long));
+        const int row_len = m.cols;
+
+        // Iterate over all rows to extract
+        for (i=0; i<len; ++i){
+
+            for (j=0;j<row_len;++j){
+
+                putElement(res,i,j, getElement(m,indexes[i],j));
+            }
+        }
+        break;
+
+    case MATRIX_SAMPLE_COLUMNS:
+        if ( len > m.cols ){
+            printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+            free(res);
+            return NULL;
+        }
+
+        res->rows=m.rows;
+        res->cols=len;
+
+        needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
+
+        const int col_len = m.rows;
+
+        // Iterate over all columns to extract
+        for (j=0; j<len; ++j){
+
+            for (i=0;i<col_len;++i){
+
+                putElement(res,i,j, getElement(m,i,indexes[j]));
+            }
+        }
+        break;
+    
+    default:
+        printf("Invalid extraction mode\n");
+        return NULL;
+        break;
     }
 
-    return NULL;
+    return res;
+}
+
+/**
+ * @brief Return the weight of a code
+ * 
+ * @param v The code as a row or column vector
+ * @return int The weight, -1 for error
+ */
+int codeWeight(BinMatrix v){
+
+    int w=0;
+
+    if (isRowVector(v)){
+
+        for (int j=0; j<v.cols; ++j){
+
+            if (getElement(v,0,j)==1)
+                w++;
+        }
+
+        return w;
+    }
+
+    if (isColumnVector(v)){
+
+        for (int i=0; i<v.rows; ++i){
+
+            if (getElement(v,i,0)==1)
+                w++;
+        }
+        return w;
+    }
+    
+    printf("Input matrix is not a vector!\n");
+    return MATRIX_INVALID_WEIGHT;
+
 }

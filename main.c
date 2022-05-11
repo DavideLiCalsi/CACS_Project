@@ -4,21 +4,21 @@
 int main(){
     
     BinMatrix* H;
-    int H_vect[16]=
+    int H_vect[128]=
     {
-        1,0,1,1,
-        0,1,0,1,
-        0,0,1,0,
-        0,0,0,0
+        0,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,
+        1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1
     };
 
-    H = buildMatrix(H_vect,4,4);
-    putElement(H,3,3,1);
+    H = buildMatrix(H_vect,2,64);
+    printMatrix(*H);
 
-    printf("Det(H): %d\n", determinant(*H));
-    BinMatrix* inv = inverse(*H);
+    addRows(H,0,1);
 
-    printMatrix(*product(*inv,*H));
+    printMatrix(*H);
+    int rows[3]={0,1,3};
+    BinMatrix* code = sampleFromMatrix(rows,1,*H, MATRIX_SAMPLE_ROWS);
+    printf("%d\n",codeWeight(*code));
 
     return 0;
 }
