@@ -667,3 +667,42 @@ BinMatrix* inverse(BinMatrix m){
     destroyMatrix(augmented);
     return inv;
 }
+
+/**
+ * @brief Subsample some rows from a matrix
+ * 
+ * @param indexes Array of rows to sample
+ * @param len Length of the array
+ * @param m Matrix to sample
+ * @return BinMatrix* Matrix of the sampled rows, NULL for error
+ */
+BinMatrix* sampleRows(int* indexes, int len, BinMatrix m){
+
+    if ( len > m.rows ){
+        printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+        return NULL;
+    }
+
+    int i;
+
+    BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
+    res->rows=len;
+    res->cols=m.cols;
+
+    int needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
+    res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
+
+    const int row_len = m.cols;
+    int array_index, bit_index;
+    unsigned long extracted_line;
+
+    for (i=0,array_index=0, bit_index=0; i<len;++i){
+
+
+        res->data[array_index] ^= extracted_line;
+        bit_index+=row_len;
+        array_index = bit_index % (8*sizeof(unsigned long));
+    }
+
+    return NULL;
+}
