@@ -11,11 +11,12 @@
  * 
  * @param array input array of integers
  * @param length length of the input array
+ * @param seed seed for the random generation
  */
-void shuffle(int *array, int length){
+void shuffle(int *array, int length, int seed){
 
-    srand(time(NULL));
-    int val, j;
+    srand(seed);
+    int val, j, k, z;
     for(int i=0; i<length; i++){
         j = rand() % (length - 0) + 0;  // i <= j < n
         int val = array[i];
@@ -30,16 +31,17 @@ void shuffle(int *array, int length){
  * 
  * @param inputset input set from where to take elements randomly
  * @param amount total number of elements to select
+ * @param seed seed for the random generation
  * @return Set* set containing "amount" distinct random numbers belonging to inputSet
  */
 
-Set* getDistinctRandomNumbers(Set *inputset, int amount){
+Set* getDistinctRandomNumbers(Set *inputset, int amount, int seed){
 
     if (amount > inputset->length)
         amount = inputset->length;
     Set *set = (Set*)malloc(sizeof(Set));
     set->length=0;
-    srand(time(NULL));
+    srand(seed);
     while (set->length != amount){
         int randomIndex = rand() % inputset->length;
         addSetElem(set, (inputset->data)[randomIndex]);
@@ -52,9 +54,10 @@ Set* getDistinctRandomNumbers(Set *inputset, int amount){
  * 
  * @param inputSet input set
  * @param amount number of elements of the subset
+ * @param seed seed for the random generation
  * @return Set* subset of the inputset
  */
-Set * getRandomElements(Set *inputSet, int amount){
+Set * getRandomElements(Set *inputSet, int amount, int seed){
     /**
      * idea: if amount is near the total number of elements in the inputSet, it may be inefficient to pick randomly
      *       elements of the inputSet according to function getDistinctRandomNumbers. Thus, in case "amount" is not
@@ -69,12 +72,12 @@ Set * getRandomElements(Set *inputSet, int amount){
     
     Set *result;
     if (amount < 0.63212055882 * inputSetLen)
-        result = getDistinctRandomNumbers(inputSet, amount);
+        result = getDistinctRandomNumbers(inputSet, amount, seed);
     else{
         int *setNumbers = (int *)malloc(sizeof(int)*inputSet->length);
         for (int i=0; i<inputSet->length; i++)
             setNumbers[i] = (inputSet->data)[i];
-        shuffle(setNumbers, inputSet->length);
+        shuffle(setNumbers, inputSet->length, seed);
         result = (Set *)malloc(sizeof(Set));
         result->length = 0;
         for (int i=0; i<amount; i++)
