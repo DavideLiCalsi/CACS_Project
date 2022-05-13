@@ -1,6 +1,3 @@
-#ifndef BINARY_MATRIX_HEADER
-#define BINARY_MATRIX_HEADER
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -38,6 +35,60 @@ struct BinMatrix{
 };
 
 typedef struct BinMatrix BinMatrix;
+
+/**
+ * @brief Compare two rwo vectors. Comparison is done
+ * by interpreting the two vectors as binary integers
+ * 
+ * @param v1 
+ * @param v2 
+ * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
+ */
+int compareVectors(BinMatrix v1, BinMatrix v2){
+
+    if (!isRowVector(v1) || !isRowVector(v2)){
+        printf("I can only compare two row vectors\n");
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    if (v1.cols != v2.cols){
+        printf("Cannot compare two vectors of size %d and %d\n", v1.cols,v2.cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    int ulong_needed = 1 + v1.cols / (8*sizeof(unsigned long));
+    int excess = v1.cols % (8*sizeof(unsigned long));
+    unsigned long w1,w2;
+
+    for (int i=0; i<ulong_needed;++i){
+
+        w1 = v1.data[i];
+        w2 = v2.data[i];
+
+        if (i<ulong_needed-1){
+            
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+        }
+        else{
+
+            w1 = v1.data[i] >> (8*sizeof(unsigned long)-excess);
+            w2 = v2.data[i] >> (8*sizeof(unsigned long)-excess);
+
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+
+            if (w1==1)
+                return 0;
+        }
+    }
+}
 
 /**
  * @brief Compare the two matrices
@@ -237,6 +288,7 @@ void printMatrix(BinMatrix m){
     }
 
 }
+
 
 /**
  * @brief Build a matrix from an array
