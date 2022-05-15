@@ -29,6 +29,7 @@
   ],
   "files.associations": {
     "stdbool.h": "c",
-    "limits": "cpp"
+    "limits": "cpp",
+    "binarymatrix.h": "c"
   }
 }

@@ -1,35 +1,33 @@
 //#include "Matrix.h"
 //#include "Matrix/BinaryMatrix.h"
-//#include "Tree/BST.h"
-#include "Utilities/randomSelector.h"
-#include <stdbool.h>
+#include "SplitSyndrome/SplitSyndrome.h"
+
 
 int main(){
     
-    /*BinMatrix* H;
-    int H_vect[128]=
-    {
-        0,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,
-        1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1
+    BST Xl=NULL;
+    BST Xr=NULL;
+    int H_arr[25]={
+        1,1,0,1,1,
+        1,1,1,1,0,
+        0,1,0,0,1,
+        0,1,0,0,1,
+        1,0,1,1,1
     };
 
-    H = buildMatrix(H_vect,2,64);
-    printMatrix(*H);
+    BinMatrix* I5 = identityMatrix(5);
+    BinMatrix* A = buildMatrix(H_arr,5,5);
+    BinMatrix* H = concat(*transpose(*A),*I5,0);
+    destroyMatrix(I5);
+    destroyMatrix(A);
 
-    addRows(H,0,1);
+    buildLeftTable(3,2,*H,&Xl);
+    buildRightTable(3,1,5,*H,&Xr);
 
-    printMatrix(*H);
-    int rows[3]={0,1,3};
-    BinMatrix* code = sampleFromMatrix(rows,1,*H, MATRIX_SAMPLE_ROWS);
-    printf("%d\n",codeWeight(*code));*/
+    printTree(Xl,BST_COMPARISON_BINMATRIX);
+    printTree(Xr,BST_COMPARISON_BINMATRIX);
 
-    int arr[100];
-
-    for (int i=0; i<100;++i)
-        arr[i]=i;
-    
-    Set* s = buildSet(arr,100); 
-    printSet(s);
+    findEqualSize_u_m(8,2,1);
     
     return 0;
 }

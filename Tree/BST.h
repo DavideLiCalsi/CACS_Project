@@ -152,19 +152,26 @@ int addNode(void* key,void* data, BST* tree, int type){
 
 void printNode(BSTNode n, int type){
 
+    puts("######## NODE ########");
+
     switch (type)
     {
     case BST_COMPARISON_INT:
-        printf("KEY: %d\n",*(int*)(n.key));
+        printf("KEY: %d\t",*(int*)(n.key));
+        printf("DATA: %d\n", *(int*)(n.data));
         break;
 
     case BST_COMPARISON_BINMATRIX:
         printf("KEY:\n");
         printMatrix(*(BinMatrix*)(n.key));
+        printf("DATA:\n");
+        printMatrix(*(BinMatrix*)(n.data));
     
     default:
         break;
     }
+
+    puts("######## END ########\n");
 }
 
 /**

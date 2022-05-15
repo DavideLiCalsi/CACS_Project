@@ -300,10 +300,10 @@ void printMatrix(BinMatrix m){
 BinMatrix* buildMatrix(int* array, int rows, int cols){
 
     BinMatrix* m = (BinMatrix*)(malloc(sizeof(BinMatrix)));
-
+    unsigned long ulong_needed = 1 + rows*cols/ (8*sizeof(unsigned long));
     m->rows=rows;
     m->cols=cols;
-    m->data=(unsigned long*) malloc(sizeof(unsigned long)*rows*cols);
+    m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
     for(int i=0; i<rows*cols; ++i){
         
@@ -442,6 +442,35 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
         return NULL;
         break;
     }
+}
+
+/**
+ * @brief Sums two vectors
+ * 
+ * @param v1 First operand
+ * @param v2 Second operand
+ * @return BinMatrix* Result, NULL for error
+ */
+BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
+
+    if (v1.rows != v2.rows || v1.cols != v2.cols){
+        printf("Cannot sum two vectors of size (%d,%d) and (%d,%d)\n",v1.rows,v1.cols,v2.rows,v2.cols);
+        return NULL;
+    }
+
+    int ulong_needed = 1 + (v1.cols*v1.cols) / ((8*sizeof(unsigned long)));
+    
+    BinMatrix* z = (BinMatrix*) malloc(sizeof(BinMatrix));
+    z->rows=v1.rows;
+    z->cols=v1.cols;
+    z->data=(unsigned long*) malloc(sizeof(unsigned long));
+
+    for (int i=0; i<ulong_needed;++i){
+
+        z->data[i] = v1.data[i] ^ v2.data[i];
+    }
+
+    return z;
 }
 
 /**
