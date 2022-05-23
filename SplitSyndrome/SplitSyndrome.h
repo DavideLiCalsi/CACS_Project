@@ -1,5 +1,7 @@
 #include "../Tree/BST.h"
+#include "PairSet.h"
 #include <math.h>
+
 
 /**
  * @brief compute the (n,k) binomial coefficient
@@ -20,27 +22,42 @@ int binomialCoeff(int n, int k){
            + binomialCoeff(n - 1, k);
 }
 
-void findEqualSize_u_m(int n, int t, int threshold){
+/**
+ * @brief Finds the pairs (u,m) such that
+ * the tables Xl and Xr have a size whose difference
+ * is below threshold
+ * 
+ * @param n The vectors length to be considered
+ * @param t The maximum number of errors
+ * @param threshold The maximum difference between the sizes
+ * @param E Pointer to the list the found entries
+ */
+void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
 
     int u,m;
     int size_l, size_r;
 
     for (m=1; m<n;++m){
 
-        for (u=0; u<=m && u<t && t-u<=n-m;++u){
-            
-            size_l = binomialCoeff(m,u);
-            size_r = binomialCoeff(n-m,t-u);
+        size_l = 1;
+        size_r = binomialCoeff(n-m,t-0);
 
-            if ( abs(size_r-size_l) < threshold )
-                printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
+        for (u=0; u<=m && u<t && t-u<=n-m;++u){
+
+            if ( abs(size_r-size_l) < threshold ){
+                //printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
+                PairSet_addHead(u,m,E);
+            }
+            
+            size_l = size_l * (m-u)/(u+1);
+            size_r = size_r * (t-u)/(n-m-t+u+1);
         }
     }
 
 }
 
 /**
- * @brief Converts an intege to binary vector
+ * @brief Converts an integer to binary vector
  * 
  * @param x The integer to convert
  * @param v The vector to populate
@@ -136,8 +153,6 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
 
     BinMatrix* Hl = transpose(*sampleFromMatrix(indexes,m,H,MATRIX_SAMPLE_COLUMNS));
 
-    printMatrix(*Hl);
-
     for (i=0; i<pow(2,m);++i){
 
         if ( intToBinVector(i,error_as_vector,m) != u )
@@ -150,7 +165,7 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
 }
 
 /**
- * @brief Builds the right table
+ * @brief Builds the right table Xr
  * 
  * @param m The length of the left part
  * @param t_minus_u The number of errors in the right part, i.e. t-u
@@ -164,8 +179,8 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
     int indexes[len-m];
     int error_as_vector[len-m];
 
-    for (i=m; i<len-m;++i){
-        indexes[i]=i;
+    for (i=0; i<len-m;++i){
+        indexes[i]=i+m;
         error_as_vector[i]=0;
     }
 
@@ -174,7 +189,8 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
     for (i=0; i<pow(2,len-m);++i){
 
         if ( intToBinVector(i,error_as_vector,len-m) != t_minus_u)
-            continue;;
+            continue;
+        
         BinMatrix* er = buildMatrix(error_as_vector,1,len-m);
         BinMatrix* sr = product(*er,*Hr);
         addNode((void*)sr, (void*) er, Xr,BST_COMPARISON_BINMATRIX);
@@ -185,22 +201,58 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
 /**
  * @brief Implements the split-syndrome algorithm
  * 
- * @param Xl 
- * @param Xr 
+ * @param H
  * @param s 
  * @param d 
  */
-void SplitSyndrome(BinMatrix H, BinMatrix s, int d){
+void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
 
-    int t;
-    BST* Xl=NULL;
-    BST* Xr=NULL;
+    int t,u,m;
+    BST Xl=NULL;
+    BST Xr=NULL;
+    BinMatrix* el;
+    BinMatrix* er;
+    PairSet tables[d];
 
-    //buildLeftTable(1,H,Xl);
-    //buildRightTable(1,s.cols,H,Xr);
+    // First do the precomputation step
+    printf("Starting the precomputation stage\n");
+
+    for (t=0; t<d;++t){
+        tables[t]=NULL;
+        findEqualSize_u_m(s.cols,t,15,&tables[t]);
+        printf("Found E(%d)\n",t);
+    }
+
+    printf("Precomputation stage complete!\n");
+
     
     for (t=1; t<d;++t){
 
+        PairSet E = tables[t];
 
+        while (E != NULL)
+        {   
+            Pair* pair=PairSet_pop(&E);
+            u=pair->x;
+            m=pair->y;
+
+            printf("Trying the values u=%d,m=%d,t=%d\n",u,m,t);
+            // Build the two tables
+            printf("Building the table X_left...");
+            buildLeftTable(m,u,H,&Xl);
+            printf("DONE!\nBuilding the table X_right...");
+            buildRightTable(m,t-u,s.cols,H,&Xr);
+            printf("DONE!\n");
+
+            if ( inspectTables(Xr,Xl,s,&el,&er) ){
+
+                // If you found the two errors, build the full error and return it
+                printf("Found code!\n");
+                *e = concat(*el,*er,0);
+                printMatrix(**e);
+                return;
+            }
+        }
+        
     }
 }

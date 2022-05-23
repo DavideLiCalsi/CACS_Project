@@ -2,32 +2,39 @@
 //#include "Matrix/BinaryMatrix.h"
 #include "SplitSyndrome/SplitSyndrome.h"
 
-
 int main(){
+
+    int d=4;
     
-    BST Xl=NULL;
-    BST Xr=NULL;
-    int H_arr[25]={
-        1,1,0,1,1,
-        1,1,1,1,0,
-        0,1,0,0,1,
-        0,1,0,0,1,
-        1,0,1,1,1
+    int A_array[25] = {
+
+        0,0,1,0,0,
+        0,0,0,1,0,
+        1,0,0,0,0,
+        0,1,0,1,1,
+        0,0,1,1,1
     };
 
-    BinMatrix* I5 = identityMatrix(5);
-    BinMatrix* A = buildMatrix(H_arr,5,5);
-    BinMatrix* H = concat(*transpose(*A),*I5,0);
-    destroyMatrix(I5);
+    int s_array[5]={
+        0,1,1,0,0
+    };
+
+    BinMatrix* A = buildMatrix(A_array,5,5);
+    BinMatrix* I = identityMatrix(5);
+    BinMatrix* H = concat(*A,*I,0);
     destroyMatrix(A);
+    destroyMatrix(I);
 
-    buildLeftTable(3,2,*H,&Xl);
-    buildRightTable(3,1,5,*H,&Xr);
+    BinMatrix* s = buildMatrix(s_array,1,5);
 
-    printTree(Xl,BST_COMPARISON_BINMATRIX);
-    printTree(Xr,BST_COMPARISON_BINMATRIX);
+    BinMatrix* e=NULL;
 
-    findEqualSize_u_m(8,2,1);
+    SplitSyndrome(*H,*s,d,&e);
+
+    if (e == NULL)
+        printf("FAILURE\n");
+    else
+        printMatrix(*e);
     
     return 0;
 }

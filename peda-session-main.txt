@@ -1,4 +1,3 @@
-break /home/davidelicalsi/CACS/CACS_Project/main.c:30
-break addNode
-
+break SplitSyndrome
+break /home/davidelicalsi/CACS/CACS_Project/SplitSyndrome/SplitSyndrome.h:189
 
