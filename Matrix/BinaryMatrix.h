@@ -1,15 +1,19 @@
-#ifndef BINARY_MATRIX_HEADER
-#define BINARY_MATRIX_HEADER
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
 
+#define MAX(a,b) (a>b?a:b)
+
 #define MATRIX_SUCCESS 0
 #define MATRIX_FAILURE 1
 #define MATRIX_INVALID_ELEMENT 2
+
+#define MATRIX_SAMPLE_ROWS 0
+#define MATRIX_SAMPLE_COLUMNS 1
+
+#define MATRIX_INVALID_WEIGHT -1
 
 /**
  * @brief Macros to manage Matrix checks
@@ -31,6 +35,60 @@ struct BinMatrix{
 };
 
 typedef struct BinMatrix BinMatrix;
+
+/**
+ * @brief Compare two row vectors. Comparison is done
+ * by interpreting the two vectors as binary integers
+ * 
+ * @param v1 
+ * @param v2 
+ * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
+ */
+int compareVectors(BinMatrix v1, BinMatrix v2){
+
+    if (!isRowVector(v1) || !isRowVector(v2)){
+        printf("I can only compare two row vectors\n");
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    if (v1.cols != v2.cols){
+        printf("Cannot compare two vectors of size %d and %d\n", v1.cols,v2.cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    int ulong_needed = 1 + v1.cols / (8*sizeof(unsigned long));
+    int excess = v1.cols % (8*sizeof(unsigned long));
+    unsigned long w1,w2;
+
+    for (int i=0; i<ulong_needed;++i){
+
+        w1 = v1.data[i];
+        w2 = v2.data[i];
+
+        if (i<ulong_needed-1){
+            
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+        }
+        else{
+
+            w1 = v1.data[i] >> (8*sizeof(unsigned long)-excess);
+            w2 = v2.data[i] >> (8*sizeof(unsigned long)-excess);
+
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+
+            if (w1==w2)
+                return 0;
+        }
+    }
+}
 
 /**
  * @brief Compare the two matrices
@@ -175,7 +233,7 @@ BinMatrix* getColumn(BinMatrix m, int j){
     col->rows=m.rows;
     col->cols=1;
 
-    int needed_u_long =  (col->rows*col->cols) / (8*sizeof(unsigned long));
+    int needed_u_long = ceil( (col->rows*col->cols) / (8*sizeof(unsigned long)) );
     col->data= (unsigned long*) malloc(sizeof(unsigned long) * needed_u_long);
     memset(col->data,0,sizeof(unsigned long) * needed_u_long);
 
@@ -231,6 +289,7 @@ void printMatrix(BinMatrix m){
 
 }
 
+
 /**
  * @brief Build a matrix from an array
  * @param array The array to convert
@@ -241,10 +300,10 @@ void printMatrix(BinMatrix m){
 BinMatrix* buildMatrix(int* array, int rows, int cols){
 
     BinMatrix* m = (BinMatrix*)(malloc(sizeof(BinMatrix)));
-
+    unsigned long ulong_needed = 1 + rows*cols/ (8*sizeof(unsigned long));
     m->rows=rows;
     m->cols=cols;
-    m->data=(unsigned long*) malloc(sizeof(unsigned long)*rows*cols);
+    m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
     for(int i=0; i<rows*cols; ++i){
         
@@ -296,10 +355,13 @@ BinMatrix* identityMatrix(int k){
         return NULL;
     }
 
+    int ulong_needed = ceil ( (k*k) *1.0/ (8*sizeof(unsigned long)) );
+
+    printf("%d\n",ulong_needed);
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
     res->rows=k;
     res->cols=k;
-    res->data=(unsigned long*) (malloc(sizeof(unsigned long)*k*k));
+    res->data=(unsigned long*) (malloc(sizeof(unsigned long)*ulong_needed));
 
     for (int i=0; i<k; ++i){
         for (int j=0; j<k; ++j){
@@ -311,6 +373,7 @@ BinMatrix* identityMatrix(int k){
         }
     }
 
+    printMatrix(*res);
     return res;
 
 }
@@ -326,6 +389,7 @@ BinMatrix* identityMatrix(int k){
 BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
+    int ulong_needed;
 
     switch (axis)
     {
@@ -339,7 +403,8 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
         res->rows=m1.rows;
         res->cols=m1.cols+m2.cols;
-        res->data=(unsigned long*) malloc(sizeof(unsigned long)*res->cols*res->rows);
+        ulong_needed = ceil( (res->cols*res->rows*1.0) /(8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
         for (int i=0; i<res->rows; ++i){
             for (int j=0; j<res->cols; ++j){
@@ -363,7 +428,8 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
         }
         res->rows=m1.rows + m2.rows;
         res->cols=m1.cols;
-        res->data=(unsigned long*) malloc(sizeof(unsigned long)*res->cols*res->rows);
+        ulong_needed = ceil( (res->cols*res->rows*1.0) /(8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
         for (int i=0; i<res->rows; ++i){
             for (int j=0; j<res->cols; ++j){
@@ -386,6 +452,35 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 }
 
 /**
+ * @brief Sums two vectors
+ * 
+ * @param v1 First operand
+ * @param v2 Second operand
+ * @return BinMatrix* Result, NULL for error
+ */
+BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
+
+    if (v1.rows != v2.rows || v1.cols != v2.cols){
+        printf("Cannot sum two vectors of size (%d,%d) and (%d,%d)\n",v1.rows,v1.cols,v2.rows,v2.cols);
+        return NULL;
+    }
+
+    int ulong_needed = ceil( (v1.cols*v1.cols*1.0) / (8*sizeof(unsigned long)) );
+    
+    BinMatrix* z = (BinMatrix*) malloc(sizeof(BinMatrix));
+    z->rows=v1.rows;
+    z->cols=v1.cols;
+    z->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
+
+    for (int i=0; i<ulong_needed;++i){
+
+        z->data[i] = v1.data[i] ^ v2.data[i];
+    }
+
+    return z;
+}
+
+/**
  * @brief Computes the inner productof the two vectors
  * 
  */
@@ -401,7 +496,7 @@ char vectorProduct(BinMatrix v1, BinMatrix v2){
         return MATRIX_INVALID_ELEMENT;
     }
 
-    int ulong_needed = 1 + (v1.cols*v1.rows) / ( 8*(sizeof(unsigned long)) );
+    int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / ( 8*(sizeof(unsigned long)) ) );
     int j;
     char res;
 
@@ -435,12 +530,17 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
     BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
     res->rows=m1.rows;
     res->cols=m2.cols;
-    res->data = (unsigned long*)(malloc(sizeof(unsigned long) * res->rows * res->cols));
+    int ulong_needed = ceil( (res->rows * res->cols*1.0) / (8*sizeof(unsigned long)) );
+    res->data = (unsigned long*)(malloc(sizeof(unsigned long) * ulong_needed));
 
     for(int i=0; i<res->rows; ++i){
         for(int j=0;j<res->cols; ++j){
             
-            int val = vectorProduct( *getRow(m1,i),*getColumn(m2,j));
+            BinMatrix* row=getRow(m1,i);
+            BinMatrix* column=getColumn(m2,j);
+            int val = vectorProduct( *row,*column);
+            destroyMatrix(row);
+            destroyMatrix(column);
             if( putElement(res,i,j,val) != MATRIX_SUCCESS)
                 return NULL;
         }
@@ -671,4 +771,117 @@ BinMatrix* inverse(BinMatrix m){
     return inv;
 }
 
-#endif
+/**
+ * @brief Subsample some rows or columns from a matrix
+ * 
+ * @param indexes Array of rows(columns) to sample
+ * @param len Length of the array
+ * @param m Matrix to sample
+ * @param mode Specify what to sample, rows or columns
+ * @return BinMatrix* Matrix of the sampled rows(columns), NULL for error
+ * 
+ * TODO: this implementation is very naive and slow. Optimize later
+ */
+BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
+
+    BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
+    int i,j;
+    int needed_ulong;
+
+    switch (mode)
+    {
+
+    case MATRIX_SAMPLE_ROWS:
+        if ( len > m.rows ){
+            printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+            free(res);
+            return NULL;
+        }
+
+        res->rows=len;
+        res->cols=m.cols;
+
+        needed_ulong = ceil( ( res->rows*res->cols *1.0) / (8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
+
+        const int row_len = m.cols;
+
+        // Iterate over all rows to extract
+        for (i=0; i<len; ++i){
+
+            for (j=0;j<row_len;++j){
+
+                putElement(res,i,j, getElement(m,indexes[i],j));
+            }
+        }
+        break;
+
+    case MATRIX_SAMPLE_COLUMNS:
+        if ( len > m.cols ){
+            printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+            free(res);
+            return NULL;
+        }
+
+        res->rows=m.rows;
+        res->cols=len;
+
+        needed_ulong = ceil( ( res->rows*res->cols*1.0 ) / (8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
+
+        const int col_len = m.rows;
+
+        // Iterate over all columns to extract
+        for (j=0; j<len; ++j){
+
+            for (i=0;i<col_len;++i){
+
+                putElement(res,i,j, getElement(m,i,indexes[j]));
+            }
+        }
+        break;
+    
+    default:
+        printf("Invalid extraction mode\n");
+        return NULL;
+        break;
+    }
+
+    return res;
+}
+
+/**
+ * @brief Return the weight of a code
+ * 
+ * @param v The code as a row or column vector
+ * @return int The weight, -1 for error
+ */
+int codeWeight(BinMatrix v){
+
+    int w=0;
+
+    if (isRowVector(v)){
+
+        for (int j=0; j<v.cols; ++j){
+
+            if (getElement(v,0,j)==1)
+                w++;
+        }
+
+        return w;
+    }
+
+    if (isColumnVector(v)){
+
+        for (int i=0; i<v.rows; ++i){
+
+            if (getElement(v,i,0)==1)
+                w++;
+        }
+        return w;
+    }
+    
+    printf("Input matrix is not a vector!\n");
+    return MATRIX_INVALID_WEIGHT;
+
+}
