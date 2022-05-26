@@ -4,6 +4,7 @@
 #include "Matrix/BinaryMatrix.h"
 #include "Utilities/utilities.h"
 #include "Utilities/randomSelector.h"
+#include "Utilities/dataReader.h"
 
 
 #define length 4
@@ -70,7 +71,7 @@ int main(){
 
 
     // SET LINKED LIST testing
-    int arrayset[10];
+    /*int arrayset[10];
     for(int i=0; i <10; i++)
         arrayset[i] = i+1;
     Set *set = buildSet(arrayset, 10);
@@ -79,13 +80,21 @@ int main(){
     for(int i=0; i<10; i++){
         while (!sortedInsert_SetLinkedList(&list, getRandomElements(set, 4, time(NULL) + 2*i)))
             /* nothing */ ;
-    }
+    /*}
     printSetLinkedList(list);
 
 
     destroy_SetLinkedList(list);
-    destroySet(set);
+    destroySet(set);*/
 
+
+    // READ FROM FILE
+    char path[100] = "./Utilities/info.txt";
+    Info *info = readData(path);
+    printMatrix(*info->H_t);
+    printMatrix(*info->s);
+    destroyInfo(info);
+    
 
     return 0;
 }
