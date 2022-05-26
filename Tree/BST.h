@@ -66,6 +66,32 @@ int compareData(void* d1, void* d2, int type){
 
 }
 
+void destroyTree(BST* tree, int type){
+
+    BST temp = *tree;
+    BST left=temp->l;
+    BST right=temp->r;
+
+    if (temp->l != NULL)
+        destroyTree( &(temp->l),type);
+
+    switch (type)
+    {
+    case BST_COMPARISON_BINMATRIX:
+        destroyMatrix((BinMatrix*) temp->data);
+        destroyMatrix((BinMatrix*) temp->key);
+        free(temp);
+        //printf("Freed node!\n");
+        break;
+    
+    default:
+        break;
+    }
+
+    if (right != NULL)
+        destroyTree( &right,type);
+}
+
 /**
  * @brief Adds a node to a BST
  * 
@@ -143,6 +169,12 @@ int addNode(void* key,void* data, BST* tree, int type){
         break;
         
         default:
+            /*printf("ERROR\n");
+            printMatrix(*(BinMatrix*) key);
+            printMatrix(*(BinMatrix*) tmp->key);
+            printMatrix(*(BinMatrix*) tmp->data);
+            printMatrix(*(BinMatrix*) data);*/
+            return BST_RES_SUCCESS;
             break;
         }
     }

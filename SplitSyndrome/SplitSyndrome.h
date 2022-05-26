@@ -42,7 +42,7 @@ void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
         size_l = 1;
         size_r = binomialCoeff(n-m,t-0);
 
-        for (u=0; u<=m && u<t && t-u<=n-m;++u){
+        for (u=0; u<=m && u<=t && t-u<=n-m;++u){
 
             if ( abs(size_r-size_l) < threshold ){
                 //printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
@@ -53,6 +53,108 @@ void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
             size_r = size_r * (t-u)/(n-m-t+u+1);
         }
     }
+
+}
+
+bool updateIndexes(int* indexes, int* moduli, int u){
+
+    int i;
+    int carry=1;
+    bool clean=false;
+
+    /*puts("Before");
+    for(i=0;i<u;++i)
+        printf("%d",indexes[i]);
+    printf("\n");*/
+
+    for (i=u-1; i >=0; --i){
+
+        indexes[i] = (indexes[i]+carry) % moduli[i];
+        carry = indexes[i] == 0 ? 1:0;
+    }
+
+    int count;
+    //puts("After");
+    for (i=0; i<u; ++i){
+
+        if (indexes[i]!=0 && indexes[i+1]==0 && !clean && i!=u-1  ){
+            clean = true;
+            count=indexes[i];
+            continue;
+        }
+        
+        if (clean){
+            indexes[i]=++count;
+        }
+
+    }
+
+    /*for(i=0;i<u;++i)
+        printf("%d",indexes[i]);
+    printf("\n");*/
+
+    // Returns a bool flag saying if you should stop
+    return !(indexes[0]==0 && indexes[u-1]==0);
+}
+
+/**
+ * @brief Enumerates all the m-vectors of length u
+ * 
+ * @param m 
+ * @param u 
+ */
+void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
+
+    int* indexes = malloc(sizeof(int)*u);
+    int* moduli = malloc(sizeof(int)*u);
+    int* array = malloc(sizeof(int)*m);
+
+    int i,j,count=0;
+
+    // Case when u=0 or u=m, only one vecto ris considered
+    if (u==0 || u==m){
+        int elem_to_set = (u==0? 0:1);
+        for(i=0;i<m;++i){
+            array[i]=elem_to_set;
+        }
+        BinMatrix* e = buildMatrix(array,1,m);
+        BinMatrix* s = product(*e,H_l_r);
+        addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
+        printf("Tested 1 vector\n");
+        free(indexes);
+        free(moduli);
+        free(array);
+        return;
+    }
+
+    for (i=0;i<u;++i){
+        indexes[i]=i;
+        moduli[i]=m-(u-i)+1;
+    }
+
+    do
+    {
+        for (i=0,j=0;i<m;++i){
+            
+            if (i==indexes[j]){
+                array[i]=1;
+                j++;
+            }
+            else
+                array[i]=0;
+                
+        }
+
+        BinMatrix* e = buildMatrix(array,1,m);
+        BinMatrix* s = product(*e,H_l_r);
+        addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
+        count++;
+    }while (updateIndexes(indexes,moduli,u));
+
+    printf("Tested %d vectors\n",count);
+    free(indexes);
+    free(moduli);
+    free(array);
 
 }
 
@@ -120,7 +222,11 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, BinMatrix** el, BinMatrix** er){
     if (node != NULL){
         *er = (BinMatrix*) Xr->data;
         *el = (BinMatrix*) node->data;
+        printf("FOUND!\n");
         return true;
+    }
+    else{
+        destroyMatrix(left_syndrome);
     }
 
     if (Xr->r != NULL){
@@ -151,17 +257,22 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
         error_as_vector[i]=0;
     }
 
-    BinMatrix* Hl = transpose(*sampleFromMatrix(indexes,m,H,MATRIX_SAMPLE_COLUMNS));
+    BinMatrix* samples = sampleFromMatrix(indexes,m,H,MATRIX_SAMPLE_COLUMNS);
+    BinMatrix* Hl = transpose(*samples);
 
-    for (i=0; i<pow(2,m);++i){
+    /*for (i=0; i<pow(2,m);++i){
 
         if ( intToBinVector(i,error_as_vector,m) != u )
             continue;
         BinMatrix* el = buildMatrix(error_as_vector,1,m);
         BinMatrix* sl = product(*el,*Hl);
         addNode((void*)sl, (void*) el, Xl,BST_COMPARISON_BINMATRIX);
-    }
+    }*/
 
+    iterateOverM_Vectors(m,u,*Hl,Xl);
+
+    destroyMatrix(samples);
+    destroyMatrix(Hl);
 }
 
 /**
@@ -184,9 +295,10 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
         error_as_vector[i]=0;
     }
 
-    BinMatrix* Hr = transpose(*sampleFromMatrix(indexes,len-m,H,MATRIX_SAMPLE_COLUMNS));
+    BinMatrix* samples = sampleFromMatrix(indexes,len-m,H,MATRIX_SAMPLE_COLUMNS);
+    BinMatrix* Hr = transpose(*samples);
 
-    for (i=0; i<pow(2,len-m);++i){
+    /*for (i=0; i<pow(2,len-m);++i){
 
         if ( intToBinVector(i,error_as_vector,len-m) != t_minus_u)
             continue;
@@ -194,8 +306,12 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
         BinMatrix* er = buildMatrix(error_as_vector,1,len-m);
         BinMatrix* sr = product(*er,*Hr);
         addNode((void*)sr, (void*) er, Xr,BST_COMPARISON_BINMATRIX);
-    }
+    }*/
 
+    iterateOverM_Vectors(len-m,t_minus_u,*Hr,Xr);
+
+    destroyMatrix(samples);
+    destroyMatrix(Hr);
 }
 
 /**
@@ -217,16 +333,16 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
     // First do the precomputation step
     printf("Starting the precomputation stage\n");
 
-    for (t=0; t<d;++t){
+    for (t=1; t<=d;++t){
         tables[t]=NULL;
-        findEqualSize_u_m(s.cols,t,15,&tables[t]);
+        findEqualSize_u_m(2*s.cols,t,60,&tables[t]);
         printf("Found E(%d)\n",t);
     }
 
     printf("Precomputation stage complete!\n");
 
     
-    for (t=1; t<d;++t){
+    for (t=1; t<=d;++t){
 
         PairSet E = tables[t];
 
@@ -241,7 +357,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
             printf("Building the table X_left...");
             buildLeftTable(m,u,H,&Xl);
             printf("DONE!\nBuilding the table X_right...");
-            buildRightTable(m,t-u,s.cols,H,&Xr);
+            buildRightTable(m,t-u,2*s.cols,H,&Xr);
             printf("DONE!\n");
 
             if ( inspectTables(Xr,Xl,s,&el,&er) ){
@@ -252,6 +368,11 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
                 printMatrix(**e);
                 return;
             }
+
+            destroyTree(&Xl,BST_COMPARISON_BINMATRIX);
+            destroyTree(&Xr,BST_COMPARISON_BINMATRIX);
+            Xl=NULL;
+            Xr=NULL;
         }
         
     }

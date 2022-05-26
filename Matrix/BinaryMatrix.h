@@ -37,7 +37,7 @@ struct BinMatrix{
 typedef struct BinMatrix BinMatrix;
 
 /**
- * @brief Compare two rwo vectors. Comparison is done
+ * @brief Compare two row vectors. Comparison is done
  * by interpreting the two vectors as binary integers
  * 
  * @param v1 
@@ -84,7 +84,7 @@ int compareVectors(BinMatrix v1, BinMatrix v2){
             if (w1<w2)
                 return -1;
 
-            if (w1==1)
+            if (w1==w2)
                 return 0;
         }
     }
@@ -233,7 +233,7 @@ BinMatrix* getColumn(BinMatrix m, int j){
     col->rows=m.rows;
     col->cols=1;
 
-    int needed_u_long =  (col->rows*col->cols) / (8*sizeof(unsigned long));
+    int needed_u_long = ceil( (col->rows*col->cols) / (8*sizeof(unsigned long)) );
     col->data= (unsigned long*) malloc(sizeof(unsigned long) * needed_u_long);
     memset(col->data,0,sizeof(unsigned long) * needed_u_long);
 
@@ -355,10 +355,13 @@ BinMatrix* identityMatrix(int k){
         return NULL;
     }
 
+    int ulong_needed = ceil ( (k*k) *1.0/ (8*sizeof(unsigned long)) );
+
+    printf("%d\n",ulong_needed);
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
     res->rows=k;
     res->cols=k;
-    res->data=(unsigned long*) (malloc(sizeof(unsigned long)*k*k));
+    res->data=(unsigned long*) (malloc(sizeof(unsigned long)*ulong_needed));
 
     for (int i=0; i<k; ++i){
         for (int j=0; j<k; ++j){
@@ -370,6 +373,7 @@ BinMatrix* identityMatrix(int k){
         }
     }
 
+    printMatrix(*res);
     return res;
 
 }
@@ -385,6 +389,7 @@ BinMatrix* identityMatrix(int k){
 BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
+    int ulong_needed;
 
     switch (axis)
     {
@@ -398,7 +403,8 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
         res->rows=m1.rows;
         res->cols=m1.cols+m2.cols;
-        res->data=(unsigned long*) malloc(sizeof(unsigned long)*res->cols*res->rows);
+        ulong_needed = ceil( (res->cols*res->rows*1.0) /(8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
         for (int i=0; i<res->rows; ++i){
             for (int j=0; j<res->cols; ++j){
@@ -422,7 +428,8 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
         }
         res->rows=m1.rows + m2.rows;
         res->cols=m1.cols;
-        res->data=(unsigned long*) malloc(sizeof(unsigned long)*res->cols*res->rows);
+        ulong_needed = ceil( (res->cols*res->rows*1.0) /(8*sizeof(unsigned long)) );
+        res->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
         for (int i=0; i<res->rows; ++i){
             for (int j=0; j<res->cols; ++j){
@@ -458,12 +465,12 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
         return NULL;
     }
 
-    int ulong_needed = 1 + (v1.cols*v1.cols) / ((8*sizeof(unsigned long)));
+    int ulong_needed = ceil( (v1.cols*v1.cols*1.0) / (8*sizeof(unsigned long)) );
     
     BinMatrix* z = (BinMatrix*) malloc(sizeof(BinMatrix));
     z->rows=v1.rows;
     z->cols=v1.cols;
-    z->data=(unsigned long*) malloc(sizeof(unsigned long));
+    z->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
     for (int i=0; i<ulong_needed;++i){
 
@@ -489,7 +496,7 @@ char vectorProduct(BinMatrix v1, BinMatrix v2){
         return MATRIX_INVALID_ELEMENT;
     }
 
-    int ulong_needed = 1 + (v1.cols*v1.rows) / ( 8*(sizeof(unsigned long)) );
+    int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / ( 8*(sizeof(unsigned long)) ) );
     int j;
     char res;
 
@@ -523,12 +530,17 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
     BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
     res->rows=m1.rows;
     res->cols=m2.cols;
-    res->data = (unsigned long*)(malloc(sizeof(unsigned long) * res->rows * res->cols));
+    int ulong_needed = ceil( (res->rows * res->cols*1.0) / (8*sizeof(unsigned long)) );
+    res->data = (unsigned long*)(malloc(sizeof(unsigned long) * ulong_needed));
 
     for(int i=0; i<res->rows; ++i){
         for(int j=0;j<res->cols; ++j){
             
-            int val = vectorProduct( *getRow(m1,i),*getColumn(m2,j));
+            BinMatrix* row=getRow(m1,i);
+            BinMatrix* column=getColumn(m2,j);
+            int val = vectorProduct( *row,*column);
+            destroyMatrix(row);
+            destroyMatrix(column);
             if( putElement(res,i,j,val) != MATRIX_SUCCESS)
                 return NULL;
         }
@@ -789,7 +801,7 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
         res->rows=len;
         res->cols=m.cols;
 
-        needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
+        needed_ulong = ceil( ( res->rows*res->cols *1.0) / (8*sizeof(unsigned long)) );
         res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
 
         const int row_len = m.cols;
@@ -814,7 +826,7 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
         res->rows=m.rows;
         res->cols=len;
 
-        needed_ulong = 1 + ( res->rows*res->cols ) / (8*sizeof(unsigned long));
+        needed_ulong = ceil( ( res->rows*res->cols*1.0 ) / (8*sizeof(unsigned long)) );
         res->data=(unsigned long*) malloc(sizeof(unsigned long)*needed_ulong);
 
         const int col_len = m.rows;
