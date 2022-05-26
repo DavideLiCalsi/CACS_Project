@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "Matrix/BinaryMatrix.h"
 #include "Utilities/utilities.h"
 #include "Utilities/randomSelector.h"
+#include "Utilities/dataReader.h"
+
+
+#define length 4
 
 
 int main(){
@@ -35,7 +40,10 @@ int main(){
     printMatrix(*H);
     printMatrix(*standardizeParityMatrix(H));*/
 
-    int length = 10;
+
+    // SET + RANDOM SUBSET SELECTION testing
+
+    /*
     int *data = (int *)malloc(sizeof(int)*length);
     for (int i=0; i<length; i++)
         (data)[i] = (i+2)%5;
@@ -44,9 +52,6 @@ int main(){
     printSet(set);
 
     quicksort(set->data,0,set->length-1);
-    printSet(set);
-
-    shuffle(set->data, set->length);
     printSet(set);
 
     addSetElem(set, 5);
@@ -62,7 +67,34 @@ int main(){
     Set *subset = getRandomElements(set, 7);
     printSet(subset);
     quicksort(subset->data, 0, subset->length-1);
-    printSet(subset);
+    printSet(subset);*/
+
+
+    // SET LINKED LIST testing
+    /*int arrayset[10];
+    for(int i=0; i <10; i++)
+        arrayset[i] = i+1;
+    Set *set = buildSet(arrayset, 10);
+    SetLinkedList *list = NULL;
+
+    for(int i=0; i<10; i++){
+        while (!sortedInsert_SetLinkedList(&list, getRandomElements(set, 4, time(NULL) + 2*i)))
+            /* nothing */ ;
+    /*}
+    printSetLinkedList(list);
+
+
+    destroy_SetLinkedList(list);
+    destroySet(set);*/
+
+
+    // READ FROM FILE
+    char path[100] = "./Utilities/info.txt";
+    Info *info = readData(path);
+    printMatrix(*info->H_t);
+    printMatrix(*info->s);
+    destroyInfo(info);
+    
 
     return 0;
 }
