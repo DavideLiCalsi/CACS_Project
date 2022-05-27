@@ -335,7 +335,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
 
     for (t=1; t<=d;++t){
         tables[t]=NULL;
-        findEqualSize_u_m(2*s.cols,t,60,&tables[t]);
+        findEqualSize_u_m(2*s.cols,t,1000,&tables[t]);
         printf("Found E(%d)\n",t);
     }
 
