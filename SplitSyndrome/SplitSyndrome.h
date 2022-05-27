@@ -1,7 +1,10 @@
 #include "../Tree/BST.h"
 #include "PairSet.h"
 #include <math.h>
+#include <time.h>
 
+unsigned int binCoefficients[100][100];
+int valid[100][100];
 
 /**
  * @brief compute the (n,k) binomial coefficient
@@ -10,16 +13,78 @@
  * @param k 
  * @return int 
  */
-int binomialCoeff(int n, int k){
+unsigned int binomialCoeff(unsigned int n, unsigned int k){
     // Base Cases
-    if (k > n)
+    if (k > n){
+        valid[n][k]=1;
+        binCoefficients[n][k]=0;
         return 0;
+    }
     if (k == 0 || k == n)
+    {
+        valid[n][k]=1;
+        binCoefficients[n][k]=1;
         return 1;
+    }
+    if (k==1)
+    {
+        valid[n][k]=1;
+        binCoefficients[n][k]= n;
+        return n;
+    }
+
+    if (valid[n][k] != -1)
+        return binCoefficients[n][k];
  
     // Recur
-    return binomialCoeff(n - 1, k - 1)
-           + binomialCoeff(n - 1, k);
+    unsigned int t1,t2;
+
+    if (valid[n-1][k-1] == -1){
+        t1=binomialCoeff(n - 1, k - 1);
+        binCoefficients[n-1][k-1]=t1;
+        valid[n-1][k-1]=1;
+    }
+    else
+        t1=binCoefficients[n-1][k-1];
+
+    if (valid[n-1][k] == -1){
+        t2=binomialCoeff(n - 1, k);
+        binCoefficients[n-1][k]=t2;
+        valid[n-1][k]=1;
+    }
+    else
+        t1=binCoefficients[n-1][k];
+
+    return t1+t2;
+}
+
+/**
+ * @brief Precomputes and stores all the
+ * coeeficients of the type binCoeff(n-m,t)
+ * for m from 1 to n-1 and t from 1 to w
+ * 
+ * @param n 
+ * @param t 
+ */
+void precomputeBinCoefficients(unsigned int n, unsigned int w){
+
+    unsigned int m,t;
+
+    for (m = 1; m <= n; m++) binCoefficients[0][m] = 0;
+    for (t = 0; t <= w; t++) binCoefficients[t][0] = 1;
+
+    for (m = 1; m <= n; m++)
+        for (t = 1; t <= 100; t++)
+            binCoefficients[m][t] = binCoefficients[m-1][t-1] + binCoefficients[m-1][t];
+
+
+    for(m=0; m<100;++m){
+
+        for(t=0;t<100;++t){
+
+            printf("%u %u %u\n", m,t,binCoefficients[m][t]);
+        }
+    }
 }
 
 /**
@@ -37,20 +102,19 @@ void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
     int u,m;
     int size_l, size_r;
 
-    for (m=1; m<n;++m){
-
-        size_l = 1;
-        size_r = binomialCoeff(n-m,t-0);
+    for (m=n-1; m>0;--m){
+        /*
+            (n-m)!/t!(n-m-t)!= (n-m+1)!/t!(n-m-t+1)! * (n-m-t+1)/(n-m+1)
+        */
 
         for (u=0; u<=m && u<=t && t-u<=n-m;++u){
 
+            size_l=binCoefficients[m][u];
+            size_r=binCoefficients[n-m][t-u];
             if ( abs(size_r-size_l) < threshold ){
                 //printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
                 PairSet_addHead(u,m,E);
             }
-            
-            size_l = size_l * (m-u)/(u+1);
-            size_r = size_r * (t-u)/(n-m-t+u+1);
         }
     }
 
@@ -249,8 +313,8 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, BinMatrix** el, BinMatrix** er){
 void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
 
     int i;
-    int indexes[m];
-    int error_as_vector[m];
+    int* indexes= malloc(sizeof(int)*m);
+    int* error_as_vector= malloc(sizeof(int)*m);
 
     for (i=0; i<m;++i){
         indexes[i]=i;
@@ -273,6 +337,8 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
 
     destroyMatrix(samples);
     destroyMatrix(Hl);
+    free(indexes);
+    free(error_as_vector);
 }
 
 /**
@@ -287,8 +353,8 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
 void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
 
     int i;
-    int indexes[len-m];
-    int error_as_vector[len-m];
+    int* indexes= malloc(sizeof(int)*(len-m));
+    int* error_as_vector= malloc(sizeof(int)*(len-m));
 
     for (i=0; i<len-m;++i){
         indexes[i]=i+m;
@@ -312,6 +378,8 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
 
     destroyMatrix(samples);
     destroyMatrix(Hr);
+    free(indexes);
+    free(error_as_vector);
 }
 
 /**
@@ -332,6 +400,9 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
 
     // First do the precomputation step
     printf("Starting the precomputation stage\n");
+
+    // Compute some bin coefficients
+    precomputeBinCoefficients(100,100);
 
     for (t=1; t<=d;++t){
         tables[t]=NULL;

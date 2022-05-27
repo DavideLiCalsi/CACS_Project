@@ -1,3 +1,6 @@
+#ifndef BINMATRIX_H
+#define BINMATRIX_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -885,3 +888,4 @@ int codeWeight(BinMatrix v){
     return MATRIX_INVALID_WEIGHT;
 
 }
+#endif
