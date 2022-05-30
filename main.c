@@ -1,24 +1,36 @@
 //#include "Matrix.h"
-#include "Matrix/BinaryMatrix.h"
+//#include "Matrix/BinaryMatrix.h"
+#include "Utilities/dataReader.h"
+#include "SplitSyndrome/SplitSyndrome.h"
+
+#define N 15
 
 int main(){
+
+    char path[100] = "./Utilities/info.txt";
+    Info *info = readData(path);
+
+    BinMatrix* A = transpose(*info->H_t);
+    BinMatrix* I = identityMatrix((info->n)/2);
     
-    BinMatrix* H;
-    int H_vect[16]=
-    {
-        1,0,1,1,
-        0,1,0,1,
-        0,0,1,0,
-        0,0,0,0
-    };
+    BinMatrix* H = concat(*I,*A,0); // H=[I|A]
+    destroyMatrix(A);
+    destroyMatrix(I);
 
-    H = buildMatrix(H_vect,4,4);
-    putElement(H,3,3,1);
+    BinMatrix* e=NULL;
 
-    printf("Det(H): %d\n", determinant(*H));
-    BinMatrix* inv = inverse(*H);
+    printMatrix(*H);
+    SplitSyndrome(*H,*info->s,info->w,&e);
 
-    printMatrix(*product(*inv,*H));
+    if (e == NULL)
+        printf("FAILURE! ERROR NOT FOUND\n");
+    else
+        printMatrix(*e);
 
+    int vector[10];
+
+    //iterateOverM_Vectors(10,3);
+
+    
     return 0;
 }
