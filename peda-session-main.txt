@@ -1,4 +1,10 @@
-break findEqualSize_u_m
+break *VectorList_destroy
+
+
+
+
+
+
 
 
 

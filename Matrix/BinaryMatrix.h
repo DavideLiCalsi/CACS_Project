@@ -468,7 +468,7 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
         return NULL;
     }
 
-    int ulong_needed = ceil( (v1.cols*v1.cols*1.0) / (8*sizeof(unsigned long)) );
+    int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / (8*sizeof(unsigned long)) );
     
     BinMatrix* z = (BinMatrix*) malloc(sizeof(BinMatrix));
     z->rows=v1.rows;

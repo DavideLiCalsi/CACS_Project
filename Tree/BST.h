@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../Matrix/BinaryMatrix.h"
+#include "VectorList.h"
 
 #define BST_RES_ERROR_NULL_PTR 1
 #define BST_RES_SUCCESS 0
@@ -78,8 +79,8 @@ void destroyTree(BST* tree, int type){
     switch (type)
     {
     case BST_COMPARISON_BINMATRIX:
-        destroyMatrix((BinMatrix*) temp->data);
         destroyMatrix((BinMatrix*) temp->key);
+        VectorList_destroy((VectorList*) &(temp->data) );
         free(temp);
         //printf("Freed node!\n");
         break;
@@ -107,7 +108,6 @@ int addNode(void* key,void* data, BST* tree, int type){
 
     // First create the new node
     BST new_node = (BST) malloc(sizeof(BSTNode));
-    new_node->data=data;
 
     if (type == BST_COMPARISON_INT){
         new_key = (int*) malloc(sizeof(int));
@@ -131,6 +131,9 @@ int addNode(void* key,void* data, BST* tree, int type){
     if (*tree == NULL){
         new_node->father=NULL;
         *tree = new_node;
+        VectorList errors = NULL;
+        VectorList_addHead((BinMatrix*)data,&errors);
+        new_node->data=errors;
 
         return BST_RES_SUCCESS;
     }
@@ -154,6 +157,10 @@ int addNode(void* key,void* data, BST* tree, int type){
             else{
                 tmp->r = new_node;
                 new_node->father=tmp;
+                VectorList errors = NULL;
+                VectorList_addHead((BinMatrix*)data,&errors);
+                new_node->data=errors;
+                
                 return BST_RES_SUCCESS;
             }
             break;
@@ -164,16 +171,19 @@ int addNode(void* key,void* data, BST* tree, int type){
             else{
                 tmp->l = new_node;
                 new_node->father=tmp;
+                VectorList errors = NULL;
+                VectorList_addHead((BinMatrix*)data,&errors);
+                new_node->data=errors;
                 return BST_RES_SUCCESS;
             }
         break;
         
         default:
-            /*printf("ERROR\n");
-            printMatrix(*(BinMatrix*) key);
-            printMatrix(*(BinMatrix*) tmp->key);
-            printMatrix(*(BinMatrix*) tmp->data);
-            printMatrix(*(BinMatrix*) data);*/
+            
+            if (type==BST_COMPARISON_BINMATRIX){
+                VectorList_addHead((BinMatrix*)data, (VectorList*) &(tmp->data) );
+                free(new_node);
+            }
             return BST_RES_SUCCESS;
             break;
         }
@@ -197,7 +207,8 @@ void printNode(BSTNode n, int type){
         printf("KEY:\n");
         printMatrix(*(BinMatrix*)(n.key));
         printf("DATA:\n");
-        printMatrix(*(BinMatrix*)(n.data));
+        VectorList_print((VectorList)n.data);
+        //printMatrix(*(BinMatrix*)(n.data));
     
     default:
         break;

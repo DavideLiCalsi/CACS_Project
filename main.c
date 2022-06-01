@@ -16,7 +16,7 @@ int main(){
     destroyMatrix(I);
 
     BinMatrix* e=NULL;
-    SplitSyndrome(*H,*info->s,8,&e);
+    SplitSyndrome(*H,*info->s,info->w,&e);
 
     
     return 0;
