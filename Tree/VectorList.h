@@ -83,13 +83,15 @@ void VectorList_destroy(VectorList* l){
 VectorList VectorList_pop(VectorList* p){
 
     if (*p == NULL){
-        printf("End of pair reached\n");
+        printf("End of vectorlist reached\n");
         return NULL;
     }
 
     VectorList ret;
     ret = *p;
     (*p)=(*p)->next;
+
+    VectorList_print(ret);
     return ret;
 }
 

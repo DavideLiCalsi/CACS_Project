@@ -346,6 +346,50 @@ void destroyMatrix(BinMatrix* m){
 }
 
 /**
+ * @brief Returns a row vector of length k whose
+ * entries are all 1
+ * 
+ * @param k 
+ * @return BinMatrix* 
+ */
+BinMatrix* oneVector(int k){
+
+    BinMatrix* res = malloc(sizeof(BinMatrix));
+    res->rows=1;
+    res->cols=k;
+
+    int ulong_needed = ceil( k*1.0 / (8*sizeof(unsigned long)) );
+    res->data = malloc(sizeof(unsigned long)*ulong_needed);
+
+    for (int i=0;i<ulong_needed;++i)
+        res->data[i]=1;
+
+    return res;
+}
+
+/**
+ * @brief Returns a row vector of length k whose
+ * entries are all 0
+ * 
+ * @param k 
+ * @return BinMatrix* 
+ */
+BinMatrix* zeroVector(int k){
+
+    BinMatrix* res = malloc(sizeof(BinMatrix));
+    res->rows=1;
+    res->cols=k;
+
+    int ulong_needed = ceil( k*1.0 / (8*sizeof(unsigned long)) );
+    res->data = malloc(sizeof(unsigned long)*ulong_needed);
+
+    for (int i=0;i<ulong_needed;++i)
+        res->data[i]=0;
+
+    return res;
+}
+
+/**
  * @brief Returns a k x k identity matrix
  * 
  * @param k The size of the identity matriz
@@ -375,8 +419,6 @@ BinMatrix* identityMatrix(int k){
                 putElement(res,i,j,0);
         }
     }
-
-    printMatrix(*res);
     return res;
 
 }
@@ -821,7 +863,7 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
 
     case MATRIX_SAMPLE_COLUMNS:
         if ( len > m.cols ){
-            printf("Cannot sample %d rows: matrix only has %d rows\n", len, m.rows);
+            printf("Cannot sample %d columns: matrix only has %d columns\n", len, m.cols);
             free(res);
             return NULL;
         }
@@ -851,6 +893,26 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
     }
 
     return res;
+}
+
+/**
+ * @brief Computes the hamming distance between two row vectors
+ * 
+ * @param m1 
+ * @param m2 
+ * @return int The hamming distance
+ */
+int HammingDistance(BinMatrix m1, BinMatrix m2){
+
+    int i;
+    int dist=0;
+
+    for(i=0;i<m1.cols;++i){
+        if (getElement(m1,0,i)!=getElement(m2,0,i))
+            dist++;
+    }
+
+    return dist;
 }
 
 /**

@@ -2,6 +2,7 @@
 //#include "Matrix/BinaryMatrix.h"
 #include "SplitSyndrome/SplitSyndrome.h"
 #include "Utilities/dataReader.h"
+#include "Supercode/Supercode.h"
 
 int main(){
 
@@ -15,9 +16,15 @@ int main(){
     destroyMatrix(A);
     destroyMatrix(I);
 
-    BinMatrix* e=NULL;
-    SplitSyndrome(*H,*info->s,info->w,&e);
+    VectorList l;
+    VectorList r;
 
+    SplitSyndrome(*H,*info->s,info->w,&l,&r);
+    VectorList_print(l);
+
+    BinMatrix b=*transpose(*zeroVector(info->n));
+    int e=4,y=4;
+    SupercodeDecoding(*H,b,info->n, 10,e,y,info->w);
     
     return 0;
 }

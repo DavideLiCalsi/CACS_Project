@@ -1,3 +1,6 @@
+#ifndef SPLIT_SYNDROME_H
+#define SPLIT_SYNDROME_H
+
 #include "../Tree/BST.h"
 #include "PairSet.h"
 #include <math.h>
@@ -90,7 +93,7 @@ void precomputeBinCoefficients(unsigned int n, unsigned int w){
  * @param threshold The maximum difference between the sizes
  * @param E Pointer to the list the found entries
  */
-void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
+void findEqualSize_u_m(int n, int t, float threshold, PairSet* E){
 
     int u,m;
     int size_l, size_r;
@@ -104,7 +107,9 @@ void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
 
             size_l=binCoefficients[m][u];
             size_r=binCoefficients[n-m][t-u];
-            if ( abs(size_r-size_l) < threshold ){
+
+            float ratio = size_r >= size_l ? size_r *1.0 / size_l : size_l*1.0/size_r;
+            if ( ratio < threshold ){
                 //printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
                 PairSet_addHead(u,m,E);
             }
@@ -382,7 +387,7 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
  * @param s 
  * @param d 
  */
-void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
+void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList* right){
 
     int t,u,m;
     BST Xl=NULL;
@@ -400,7 +405,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
     // Build the tables E(1),...,E(d)
     for (t=1; t<=d;++t){
         tables[t]=NULL;
-        findEqualSize_u_m(2*s.cols,t,1000,&tables[t]);
+        findEqualSize_u_m(2*s.cols,t,1.05,&tables[t]);
         printf("Found E(%d)\n",t);
     }
 
@@ -433,6 +438,8 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
                 printf("Found code!\n");
                 VectorList_print(el);
                 VectorList_print(er);
+                *left=el;
+                *right=er;
                 return;
             }
 
@@ -444,3 +451,5 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
         
     }
 }
+
+#endif
