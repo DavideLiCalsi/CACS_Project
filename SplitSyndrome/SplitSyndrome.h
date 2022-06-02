@@ -18,8 +18,8 @@ int binomialCoeff(int n, int k){
         return 1;
  
     // Recur
-    return binomialCoeff(n - 1, k - 1)
-           + binomialCoeff(n - 1, k);
+    return binomialCoefficients(n - 1, k - 1)
+           + binomialCoefficients(n - 1, k);
 }
 
 /**
@@ -40,7 +40,7 @@ void findEqualSize_u_m(int n, int t, int threshold, PairSet* E){
     for (m=1; m<n;++m){
 
         size_l = 1;
-        size_r = binomialCoeff(n-m,t-0);
+        size_r = binomialCoefficients(n-m,t-0);
 
         for (u=0; u<=m && u<=t && t-u<=n-m;++u){
 
@@ -111,7 +111,7 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
 
     int i,j,count=0;
 
-    // Case when u=0 or u=m, only one vecto ris considered
+    // Case when u=0 or u=m, only one vector is considered
     if (u==0 || u==m){
         int elem_to_set = (u==0? 0:1);
         for(i=0;i<m;++i){
@@ -222,7 +222,6 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, BinMatrix** el, BinMatrix** er){
     if (node != NULL){
         *er = (BinMatrix*) Xr->data;
         *el = (BinMatrix*) node->data;
-        printf("FOUND!\n");
         return true;
     }
     else{
@@ -365,7 +364,6 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, BinMatrix** e){
                 // If you found the two errors, build the full error and return it
                 printf("Found code!\n");
                 *e = concat(*el,*er,0);
-                printMatrix(**e);
                 return;
             }
 
