@@ -1,6 +1,7 @@
 #ifndef BINMATRIX_H
 #define BINMATRIX_H
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -20,7 +21,7 @@
 
 /**
  * @brief Macros to manage Matrix checks
- * 
+ *
  */
 #define isRowVector(x) (x.rows == 1)
 #define isColumnVector(x) (x.cols == 1)
@@ -42,9 +43,9 @@ typedef struct BinMatrix BinMatrix;
 /**
  * @brief Compare two row vectors. Comparison is done
  * by interpreting the two vectors as binary integers
- * 
- * @param v1 
- * @param v2 
+ *
+ * @param v1
+ * @param v2
  * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
  */
 int compareVectors(BinMatrix v1, BinMatrix v2){
@@ -69,7 +70,7 @@ int compareVectors(BinMatrix v1, BinMatrix v2){
         w2 = v2.data[i];
 
         if (i<ulong_needed-1){
-            
+
             if (w1 > w2)
                 return 1;
 
@@ -95,7 +96,7 @@ int compareVectors(BinMatrix v1, BinMatrix v2){
 
 /**
  * @brief Compare the two matrices
- * 
+ *
  * @param m1 First matrix
  * @param m2 Second matrix
  * @return true The matrices are equal
@@ -119,7 +120,7 @@ bool compareMatrices(BinMatrix m1, BinMatrix m2){
 
 /**
  * @brief Get the Element of indexes (i,j)
- * 
+ *
  * @param m The matrix
  * @param i Row index
  * @param j Column index
@@ -147,7 +148,7 @@ char getElement(BinMatrix m, int i, int j){
 
 /**
  * @brief Change m[i][j] to val
- * 
+ *
  * @param m The matrix
  * @param i The row index
  * @param j The column index
@@ -190,7 +191,7 @@ int putElement(BinMatrix* m, int i, int j, int val){
 
 /**
  * @brief Get the i-th row of the matrix
- * 
+ *
  * @param m The matrix
  * @param i The row index
  * @return BinMatrix* An array representing the matrix row
@@ -221,7 +222,7 @@ BinMatrix* getRow(BinMatrix m, int i){
 
 /**
  * @brief Get the j-th column of the matrix
- * 
+ *
  * @param m The matrix
  * @param j The column index
  * @return BinMatrix* An array representing the matrix column
@@ -252,7 +253,7 @@ BinMatrix* getColumn(BinMatrix m, int j){
 
 /**
  * @brief Computes the transpose matrix of m
- * 
+ *
  * @param m BinMatrix that you wish to transpose
  * @return BinMatrix* pointer to the transpose matrix, NULL on failure
  */
@@ -276,7 +277,7 @@ BinMatrix* transpose(BinMatrix m){
 
 /**
  * @brief Pretty prints the input matrix
- * 
+ *
  * @param m The input matrix
  */
 void printMatrix(BinMatrix m){
@@ -309,7 +310,7 @@ BinMatrix* buildMatrix(int* array, int rows, int cols){
     m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
 
     for(int i=0; i<rows*cols; ++i){
-        
+
         int row_index, col_index;
         row_index=i/cols;
         col_index= (i%cols);
@@ -330,7 +331,7 @@ BinMatrix* buildMatrix(int* array, int rows, int cols){
 /**
  * @brief Destroys the input matrix, i.e. it frees all the
  * allocated memory
- * 
+ *
  * @param m Pointer to the matrix to free
  */
 void destroyMatrix(BinMatrix* m){
@@ -348,9 +349,9 @@ void destroyMatrix(BinMatrix* m){
 /**
  * @brief Returns a row vector of length k whose
  * entries are all 1
- * 
- * @param k 
- * @return BinMatrix* 
+ *
+ * @param k
+ * @return BinMatrix*
  */
 BinMatrix* oneVector(int k){
 
@@ -370,9 +371,9 @@ BinMatrix* oneVector(int k){
 /**
  * @brief Returns a row vector of length k whose
  * entries are all 0
- * 
- * @param k 
- * @return BinMatrix* 
+ *
+ * @param k
+ * @return BinMatrix*
  */
 BinMatrix* zeroVector(int k){
 
@@ -391,7 +392,7 @@ BinMatrix* zeroVector(int k){
 
 /**
  * @brief Returns a k x k identity matrix
- * 
+ *
  * @param k The size of the identity matriz
  * @return Matrix* The identity matrix, null for error
  */
@@ -404,7 +405,7 @@ BinMatrix* identityMatrix(int k){
 
     int ulong_needed = ceil ( (k*k) *1.0/ (8*sizeof(unsigned long)) );
 
-    printf("%d\n",ulong_needed);
+    //printf("%d\n",ulong_needed);
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
     res->rows=k;
     res->cols=k;
@@ -425,7 +426,7 @@ BinMatrix* identityMatrix(int k){
 
 /**
  * @brief Concatenates two matrices along the specified axis
- * 
+ *
  * @param m1 First matrix
  * @param m2 Second matrix
  * @param axis The axis along which you want to concat, either 0 or 1
@@ -439,7 +440,7 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
     switch (axis)
     {
     case 0:
-        
+
         if (m1.rows != m2.rows){
             printf("Cannot concatenate two matrices having %d and %d rows\n", m1.rows, m2.rows);
             free(res);
@@ -465,7 +466,7 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
         break;
 
     case 1:
-        
+
         if (m1.cols != m2.cols){
             printf("Cannot concatenate two matrices having %d and %d colums\n", m1.cols, m2.cols);
             free(res);
@@ -488,7 +489,7 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
         return res;
         break;
-    
+
     default:
         printf("Invalid axis %d\n",axis);
         return NULL;
@@ -498,7 +499,7 @@ BinMatrix* concat(BinMatrix m1, BinMatrix m2, int axis){
 
 /**
  * @brief Sums two vectors
- * 
+ *
  * @param v1 First operand
  * @param v2 Second operand
  * @return BinMatrix* Result, NULL for error
@@ -511,7 +512,7 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
     }
 
     int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / (8*sizeof(unsigned long)) );
-    
+
     BinMatrix* z = (BinMatrix*) malloc(sizeof(BinMatrix));
     z->rows=v1.rows;
     z->cols=v1.cols;
@@ -527,7 +528,7 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
 
 /**
  * @brief Computes the inner productof the two vectors
- * 
+ *
  */
 char vectorProduct(BinMatrix v1, BinMatrix v2){
 
@@ -560,9 +561,9 @@ char vectorProduct(BinMatrix v1, BinMatrix v2){
 
 /**
  * @brief Compute the matrix product between m1 and m2
- * 
- * @param m1 
- * @param m2 
+ *
+ * @param m1
+ * @param m2
  * @return BinMatrix* The product between m1 and m2, NULL if fails
  */
 BinMatrix* product(BinMatrix m1, BinMatrix m2){
@@ -571,7 +572,7 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
         printf("Cannot multiply matrices with %d columns and %d rows\n",m1.cols,m2.rows);
         return NULL;
     }
-        
+
     BinMatrix* res = (BinMatrix*) (malloc(sizeof(BinMatrix)));
     res->rows=m1.rows;
     res->cols=m2.cols;
@@ -580,7 +581,7 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
 
     for(int i=0; i<res->rows; ++i){
         for(int j=0;j<res->cols; ++j){
-            
+
             BinMatrix* row=getRow(m1,i);
             BinMatrix* column=getColumn(m2,j);
             int val = vectorProduct( *row,*column);
@@ -596,7 +597,7 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
 
 /**
  * @brief Swaps rows r1 and r2 in the input matrix
- * 
+ *
  * @param m The input matrix
  * @param r1 The 1st row
  * @param r2 The 2nd row
@@ -651,11 +652,11 @@ int swapRows(BinMatrix* m, int r1, int r2){
 /**
  * @brief Adds row r2 to row r1 in matrix m.
  * In this context, adding is binary (i.e. xor)
- * 
+ *
  * @param m Pointer to the matrix to manipulate
  * @param r1 Row to increment
  * @param r2 Row to add
- * @return int 
+ * @return int
  */
 int addRows(BinMatrix* m, int r1, int r2){
 
@@ -697,9 +698,9 @@ int addRows(BinMatrix* m, int r1, int r2){
 
 /**
  * @brief Computes the determinant but inefficiently
- * 
- * @param m 
- * @return char 
+ *
+ * @param m
+ * @return char
  */
 char addRowsSlow(BinMatrix* m,int i, int j){
 
@@ -712,7 +713,7 @@ char addRowsSlow(BinMatrix* m,int i, int j){
         putElement(m,i,col_index,new);
         col_index++;
     }
-    
+
 }
 
 void swapRowsSlow(BinMatrix* m, int i, int j){
@@ -731,9 +732,9 @@ void swapRowsSlow(BinMatrix* m, int i, int j){
 
 /**
  * @brief Computes the determinant of matrix m
- * 
- * @param m 
- * @return char 
+ *
+ * @param m
+ * @return char
  */
 char determinant(BinMatrix m){
 
@@ -752,7 +753,7 @@ char determinant(BinMatrix m){
         With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
         */
         for (i=j; i<m.rows;++i){
-            
+
             if ( getElement(m,i,j) == 1 ){
                 swapRows(&m,k,i);
                 k++;
@@ -787,9 +788,9 @@ char determinant(BinMatrix m){
 }
 
 /**
- * @brief Computes the inverse of matrix m 
+ * @brief Computes the inverse of matrix m
  * through the Gauss-Jordan elimination
- * 
+ *
  * @param m The matrix to invert
  * @return BinMatrix* The inverse matrix
  */
@@ -805,7 +806,7 @@ BinMatrix* inverse(BinMatrix m){
     // Build the augmented matrix by concatenating the matrix to invert
     // and the Identity
     BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
-    
+
     for (j=0; j<m.cols;++j){
 
         k=j;
@@ -814,7 +815,7 @@ BinMatrix* inverse(BinMatrix m){
         With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
         */
         for (i=j+1; i<m.rows;++i){
-            
+
             if ( getElement(*augmented,i,j) == 1 && k !=i){
                 swapRows(augmented,k,i);
                 k++;
@@ -857,13 +858,13 @@ BinMatrix* inverse(BinMatrix m){
 
 /**
  * @brief Subsample some rows or columns from a matrix
- * 
+ *
  * @param indexes Array of rows(columns) to sample
  * @param len Length of the array
  * @param m Matrix to sample
  * @param mode Specify what to sample, rows or columns
  * @return BinMatrix* Matrix of the sampled rows(columns), NULL for error
- * 
+ *
  * TODO: this implementation is very naive and slow. Optimize later
  */
 BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
@@ -924,7 +925,7 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
             }
         }
         break;
-    
+
     default:
         printf("Invalid extraction mode\n");
         return NULL;
@@ -936,16 +937,16 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
 
 /**
  * @brief Computes the hamming distance between two row vectors
- * 
- * @param m1 
- * @param m2 
+ *
+ * @param m1
+ * @param m2
  * @return int The hamming distance
  */
 int HammingDistance(BinMatrix m1, BinMatrix m2){
 
     int i;
     int dist=0;
-    
+
     for(i=0;i< m1.cols;++i){
         if (getElement(m1,0,i)!=getElement(m2,0,i))
             dist++;
@@ -956,7 +957,7 @@ int HammingDistance(BinMatrix m1, BinMatrix m2){
 
 /**
  * @brief Return the weight of a code
- * 
+ *
  * @param v The code as a row or column vector
  * @return int The weight, -1 for error
  */
@@ -984,7 +985,7 @@ int codeWeight(BinMatrix v){
         }
         return w;
     }
-    
+
     printf("Input matrix is not a vector!\n");
     return MATRIX_INVALID_WEIGHT;
 

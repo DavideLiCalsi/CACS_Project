@@ -6,6 +6,14 @@
 #include <math.h>
 #include <string.h>
 #include "../Matrix/BinaryMatrix.h"
+#include "dataStructures.h"
+#include "randomSelector.h"
+
+#define N 100
+
+unsigned long long binCoefficients[N][N];
+int valid[N][N];
+
 
 /**
  * @brief compute the (n,k) binomial coefficient
@@ -14,10 +22,74 @@
  * @param k 
  * @return int 
  */
-int binomialCoefficients(int n, int k){
+unsigned long long binomialCoefficients(unsigned int n, unsigned int k){
+    // Base Cases
+    if (k > n){
+        valid[n][k]=1;
+        binCoefficients[n][k]=0;
+        return 0;
+    }
     if (k == 0 || k == n)
+    {
+        valid[n][k]=1;
+        binCoefficients[n][k]=1;
         return 1;
-    return binomialCoefficients(n - 1, k - 1) + binomialCoefficients(n - 1, k);
+    }
+    if (k==1)
+    {
+        valid[n][k]=1;
+        binCoefficients[n][k]= n;
+        return n;
+    }
+
+    if (valid[n][k] != -1)
+        return binCoefficients[n][k];
+ 
+    // Recur
+    unsigned int t1,t2;
+
+    if (valid[n-1][k-1] == -1){
+        t1=binomialCoefficients(n - 1, k - 1);
+        binCoefficients[n-1][k-1]=t1;
+        valid[n-1][k-1]=1;
+    }
+    else
+        t1=binCoefficients[n-1][k-1];
+
+    if (valid[n-1][k] == -1){
+        t2=binomialCoefficients(n - 1, k);
+        binCoefficients[n-1][k]=t2;
+        valid[n-1][k]=1;
+    }
+    else
+        t1=binCoefficients[n-1][k];
+
+    return t1+t2;
+}
+
+/**
+ * @brief Precomputes and stores all the coefficients of the type binCoeff(n-m,t)
+ * for m from 1 to n-1 and t from 1 to w
+ * 
+ * @param n 
+ * @param t 
+ */
+void precomputeBinomialCoefficients(unsigned int n, unsigned int w){
+
+    unsigned int m,t;
+
+    for (m = 1; m <= n; m++) binCoefficients[0][m] = 0;
+    for (t = 0; t <= w; t++) binCoefficients[t][0] = 1;
+
+    for (m = 1; m <= n; m++)
+        for (t = 1; t <= N; t++)
+            binCoefficients[m][t] = binCoefficients[m-1][t-1] + binCoefficients[m-1][t];
+
+   /* for(m=0; m<N;++m)
+        for(t=0;t<N;++t)
+            printf("%u %u %llu\n", m,t,binCoefficients[m][t]);
+    */
+    
 }
 
 
@@ -31,26 +103,17 @@ int binomialCoefficients(int n, int k){
  */
 int gilbertVashamovDistance(int n, int k, int q){
 
-    int y = pow(q, n-k);
+    unsigned long long y = pow(q, n-k);
+    printf("%lld\n", y);
     int distance = 1;
 
-    int partial_sum = 0;
-    while(partial_sum < y){
-        distance++;
-        partial_sum += binomialCoefficients(n-1,distance-2)*pow(q-1,distance-2);        
-    }
-    return distance;
-    
-    /*
-    implementation based on a different formula 
-    (see "General Methods of Decoding of Linear Codes")
-    distance = 1;
-    partial_sum = 0;
-    while(partial_sum < y){
+    unsigned long long partial_sum = 0;
+    while(partial_sum <= y){
         distance++;
         partial_sum += binomialCoefficients(n,distance-1)*pow(q-1,distance-1);
+        printf("%d--%d\n", n, distance);
     }
-    */
+    return distance;
 }
 
 
@@ -158,6 +221,152 @@ BinMatrix* standardizeParityMatrix(BinMatrix *parityMatrix){
     }
     return parityMatrix;
 }
+
+
+/**
+ * @brief generate an admissable codeword using generator matrix G
+ * 
+ * @param G generator matrix
+ * @param seed random seed
+ * @return BinMatrix* generated codeword
+ */
+BinMatrix* generateCodeword(BinMatrix *G, int seed){
+
+    srand(seed);
+    int k = G->rows;
+    int n = G->cols;
+
+    // take randomly some of the generator matrix's rows and combine them to obtain a codeword 
+    int *rows_array = (int *)malloc(sizeof(int)*k);
+    for (int i=0; i<k; i++)
+        rows_array[i] = i;
+    Set* G_rows = buildSet(rows_array, k);
+    free(rows_array);
+    int num_G_rows = 1 + rand() % (k-1); // number of the generator's rows to combine
+    Set* G_rows_index = getDistinctRandomNumbers(G_rows, num_G_rows, seed); // indeces of the G's rows to select
+    destroySet(G_rows);
+    
+    // generate the codeword
+    BinMatrix *codeword = getRow(*G, G_rows_index->data[0]);
+    BinMatrix *tmp, *tmp2;
+    for (int i=1; i<num_G_rows; i++){
+        tmp=codeword;
+        tmp2 = getRow(*G, G_rows_index->data[i]);
+        codeword = vectorSum(*tmp, *tmp2);
+        destroyMatrix(tmp); destroyMatrix(tmp2);
+    }
+    destroySet(G_rows_index);
+
+    return codeword;
+}
+
+
+/**
+ * @brief generate a random error due to a noisy channel
+ * 
+ * @param n codeword's length
+ * @param w minimum Hamming weight
+ * @param seed random seed
+ * @return BinMatrix* generated random error
+ */
+BinMatrix *generateError(int n, int w, int seed){
+
+    srand(seed);
+
+    // select number of 1s of the error
+    int ones = 1 + rand() % (w-1);
+
+    // select the position to set to 1
+    int *array = (int *)malloc(sizeof(int)*n);
+    for (int i=0; i<n; i++)
+        array[i] = i;
+    Set* indeces = buildSet(array, n);
+    free(array);
+    Set *selected_indeces = getDistinctRandomNumbers(indeces, ones, seed);
+    destroySet(indeces);
+    
+    // generate the error
+    int *error_array = (int *)malloc(sizeof(int)*n);
+    for (int i=0; i<n; i++)
+        error_array[i] = 0;
+    for (int i=0; i<selected_indeces->length; i++)
+        error_array[selected_indeces->data[i]] = 1;
+
+    return buildMatrix(error_array, 1, n);
+}
+
+typedef struct _allBinaryString{
+    int **binaryStrings;
+    int index;
+}AllBinaryStrings;
+
+
+AllBinaryStrings *buildAllBinaryStrings(int lenStrings){
+    AllBinaryStrings *res = (AllBinaryStrings *)malloc(sizeof(AllBinaryStrings));
+
+    res->binaryStrings = (int **)malloc(sizeof(int *)*pow(2,lenStrings));
+    for(int i=0; i<pow(2,lenStrings); i++)
+        res->binaryStrings[i] = (int *)malloc(sizeof(int)*lenStrings);
+    res->index = 0;
+
+}
+
+
+void generateAllBinaryStrings(int n, int arr[], int i, AllBinaryStrings *res){
+    if (i == n) {
+        int *copy = (int *)malloc(sizeof(int)*n);
+        for (int j=0; j<n; j++)
+            copy[j] = arr[j];
+        res->binaryStrings[res->index] = copy;
+        res->index += 1;
+        return;
+    }
+ 
+    // First assign "0" at ith position
+    // and try for all other permutations
+    // for remaining positions
+    arr[i] = 0;
+    generateAllBinaryStrings(n, arr, i + 1, res);
+ 
+    // And then assign "1" at ith position
+    // and try for all other permutations
+    // for remaining positions
+    arr[i] = 1;
+    generateAllBinaryStrings(n, arr, i + 1, res);
+}
+
+
+/**
+ * @brief generate all the admissible codeword
+ * 
+ * @param G Generator matrix
+ * @return BinMatrix** Array of all the admissible codewords
+ */
+BinMatrix **generateAllCodeword(BinMatrix *G){
+
+    int k = G->rows;
+    BinMatrix **allCodewords = (BinMatrix **)malloc(sizeof(BinMatrix *));
+
+    int *array = (int *)malloc(sizeof(int)*k);
+    for(int i=0; i<k; i++)
+        array[i] = i;
+    Set *set = buildSet(array, k);
+    free(array);
+
+    AllBinaryStrings *allBinaryStrings = buildAllBinaryStrings(k);
+    
+    generateAllBinaryStrings(k, set->data, 0, allBinaryStrings);
+
+    for (int i=0; i<pow(2,k); i++){
+        for (int j=0; j<k; j++)
+            printf("%d ", allBinaryStrings->binaryStrings[i][j]);
+        printf("\n");
+    }
+
+    return NULL;
+}
+
+
 
 
 
