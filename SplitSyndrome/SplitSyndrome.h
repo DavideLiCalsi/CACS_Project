@@ -397,7 +397,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     PairSet tables[d];
 
     // First do the precomputation step
-    printf("Starting the precomputation stage\n");
+    //printf("Starting the precomputation stage\n");
 
     // Compute some bin coefficients
     precomputeBinCoefficients(100,100);
@@ -406,16 +406,16 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     for (t=1; t<=d;++t){
         tables[t]=NULL;
         findEqualSize_u_m(2*s.cols,t,1.05,&tables[t]);
-        printf("Found E(%d)\n",t);
+        //printf("Found E(%d)\n",t);
     }
 
-    printf("Precomputation stage complete!\n");
+    //printf("Precomputation stage complete!\n");
 
     
     for (t=1; t<=d;++t){
 
         PairSet E = tables[t];
-        printf("Trying t=%d\n",t);
+        //printf("Trying t=%d\n",t);
 
         while (E != NULL)
         {   
@@ -435,9 +435,9 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
             if ( inspectTables(Xr,Xl,s,&el,&er) ){
 
                 // If you found the two errors, build the full error and return it
-                printf("Found code!\n");
-                VectorList_print(el);
-                VectorList_print(er);
+                //printf("Found code!\n");
+                //VectorList_print(el);
+                //VectorList_print(er);
                 *left=el;
                 *right=er;
                 return;

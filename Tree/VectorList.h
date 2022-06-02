@@ -103,6 +103,8 @@ bool VectorList_search(BinMatrix v, VectorList l){
     {
         if (compareMatrices(v,*temp->v)==0)
             return true;
+
+        temp=temp->next;
     }
 
     return false;

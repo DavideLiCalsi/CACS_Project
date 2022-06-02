@@ -1,16 +1,5 @@
-break *VectorList_destroy
-
-
-
-
-
-
-
-
-
-
-
-
+break getInformationSet
+break /home/davidelicalsi/CACS/CACS_Project/Supercode/Supercode.h:219
 
 
 

@@ -362,7 +362,7 @@ BinMatrix* oneVector(int k){
     res->data = malloc(sizeof(unsigned long)*ulong_needed);
 
     for (int i=0;i<ulong_needed;++i)
-        res->data[i]=1;
+        res->data[i]=0xffffffffffffffffUL;
 
     return res;
 }
@@ -696,8 +696,41 @@ int addRows(BinMatrix* m, int r1, int r2){
 }
 
 /**
- * @brief Inefficient recursive procedure
- * to compute the determinant of matrix m
+ * @brief Computes the determinant but inefficiently
+ * 
+ * @param m 
+ * @return char 
+ */
+char addRowsSlow(BinMatrix* m,int i, int j){
+
+    int col_index=0;
+    int row_len=m->cols;
+
+    while (col_index<row_len)
+    {
+        char new = ( getElement(*m,i,col_index) ^ getElement(*m,j,col_index) ) %2;
+        putElement(m,i,col_index,new);
+        col_index++;
+    }
+    
+}
+
+void swapRowsSlow(BinMatrix* m, int i, int j){
+    int col_index=0;
+    int row_len=m->cols;
+
+    while (col_index<row_len)
+    {
+        char i_val= getElement(*m,i,col_index)%2;
+        char j_val= getElement(*m,i,col_index)%2;
+        putElement(m,i,col_index,j_val);
+        putElement(m,j,col_index,i_val);
+        col_index++;
+    }
+}
+
+/**
+ * @brief Computes the determinant of matrix m
  * 
  * @param m 
  * @return char 
@@ -710,7 +743,7 @@ char determinant(BinMatrix m){
         printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
         return MATRIX_INVALID_ELEMENT;
     }
-
+   // puts("BEGIN DET");
     for (j=0; j<m.cols;++j){
 
         k=j;
@@ -720,22 +753,28 @@ char determinant(BinMatrix m){
         */
         for (i=j; i<m.rows;++i){
             
-            if ( getElement(m,i,j) == 1 && k !=i){
+            if ( getElement(m,i,j) == 1 ){
                 swapRows(&m,k,i);
                 k++;
             }
         }
+
+     //   printf("Fixed column %d\n",j);
 
         /*
         Sum rows to bring the matrix in inferior triangular form
         */
         for (i=j+1; i<m.rows;++i ){
 
-            if ( getElement(m,i,j) == 1 )
-                addRows(&m,i,j);
+            if ( getElement(m,i,j) == 1 ){
+              //  printf("Adding %d to %d\n",j,i);
+                addRowsSlow(&m,i,j);
+            }
         }
     }
 
+    //printf("DONE DET\n");
+    //printMatrix(m);
     /*
     If there is a 0 on the main diagonal, the determinant is 0
     */
@@ -774,7 +813,7 @@ BinMatrix* inverse(BinMatrix m){
         /*
         With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
         */
-        for (i=j; i<m.rows;++i){
+        for (i=j+1; i<m.rows;++i){
             
             if ( getElement(*augmented,i,j) == 1 && k !=i){
                 swapRows(augmented,k,i);
@@ -792,7 +831,7 @@ BinMatrix* inverse(BinMatrix m){
         }
     }
 
-    printMatrix(*augmented);
+    //printMatrix(*augmented);
 
     BinMatrix* inv = (BinMatrix*) ( malloc(sizeof(BinMatrix)) );
     inv->rows=m.rows;
@@ -906,8 +945,8 @@ int HammingDistance(BinMatrix m1, BinMatrix m2){
 
     int i;
     int dist=0;
-
-    for(i=0;i<m1.cols;++i){
+    
+    for(i=0;i< m1.cols;++i){
         if (getElement(m1,0,i)!=getElement(m2,0,i))
             dist++;
     }

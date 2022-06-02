@@ -22,9 +22,14 @@ int main(){
     SplitSyndrome(*H,*info->s,info->w,&l,&r);
     VectorList_print(l);
 
-    BinMatrix b=*transpose(*zeroVector(info->n));
-    int e=4,y=4;
-    SupercodeDecoding(*H,b,info->n, 10,e,y,info->w);
+    int b_vect[20]={ 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
+    BinMatrix* b= buildMatrix(b_vect,20,1);
+    /*BinMatrix err=*transpose(*zeroVector(info->n));
+    putElement(&err,0,0,1);
+    putElement(&err,0,3,1);*/
+
+    int e=4,y=10;
+    SupercodeDecoding(*H,*b,info->n,(info->n)/2 ,e,y,info->w);
     
     return 0;
 }
