@@ -232,7 +232,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
 
         //printf("Determinant %d\n",det);
 
-        if (det==1 ){
+        if (1 || det==1 ){
             //printf("Stopped at %d\n",i);
             quicksort(gamma->data,0,k-1);
             destroyMatrix(H_sub);

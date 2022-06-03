@@ -7,7 +7,8 @@
 
 int main(){
 
-    int seed = 5;   // fixed for repeatability
+    srand(time(NULL));
+    int seed = rand();   // fixed for repeatability
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
@@ -57,11 +58,11 @@ int main(){
 
     precomputeBinomialCoefficients(info->n,(info->n)/2);
 
-    int e=2,y=2;
+    int e=3,y=5;
     BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
 
-    printf("\ndistance from the received codeword: %d\n",HammingDistance(*decoded,*receivedCodeword) );
-    printf("distance from the original codeword: %d\n\n",HammingDistance(*decoded,*codeword) );
+    printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
+    printf("Dist(original codeword,received codeword): %d\n\n",HammingDistance(*receivedCodeword,*codeword) );
 
     printf("Supercode Decoding guess: ");
     printMatrix(*decoded);
@@ -71,6 +72,15 @@ int main(){
     printMatrix(*error);
     printf("Received codeword: ");
     printMatrix(*receivedCodeword);
+
+    printf("Syndrome of original codeword ");
+    printMatrix(*product(*H,*transpose(*codeword) ) );
+
+    printf("Syndrome of decoded codeword ");
+    printMatrix(*product(*H,*transpose(*decoded) ) );
+
+    printf("Syndrome of received codeword ");
+    printMatrix(*product(*H,*transpose(*receivedCodeword) ) );
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
     

@@ -405,7 +405,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     BST Xr=NULL;
     /*VectorList el;
     VectorList er;*/
-    PairSet tables[d];
+    PairSet* tables=malloc(sizeof(PairSet)*(d+1));
 
     // First do the precomputation step
     //printf("Starting the precomputation stage\n");
@@ -434,6 +434,8 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
             Pair* pair=PairSet_pop(&E);
             u=pair->x;
             m=pair->y;
+
+            PairSet_destroy(pair);
 
             //printf("Trying the values u=%d,m=%d,t=%d\n",u,m,t);
             // Build the two tables
@@ -467,6 +469,8 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
         }
         
     }
+
+    free(tables);
 }
 
 #endif

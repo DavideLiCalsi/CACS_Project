@@ -56,3 +56,7 @@ Pair* PairSet_pop(PairSet* p){
     (*p)=(*p)->next;
     return ret;
 }
+
+void PairSet_destroy(PairSet p){
+    free(p);
+}
