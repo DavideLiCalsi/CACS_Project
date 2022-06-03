@@ -13,18 +13,17 @@
 #define BST_COMPARISON_INT 0
 #define BST_COMPARISON_BINMATRIX 1
 
-struct BST
+typedef struct _BSTNode
 {
     void* key;
     void* data;
-    struct BST* father;
-    struct BST* l;
-    struct BST* r;
+    struct _BSTNode* father;
+    struct _BSTNode* l;
+    struct _BSTNode* r;
     
-};
+}BSTNode;
 
-typedef struct BST* BST;
-typedef struct BST BSTNode;
+typedef BSTNode* BST;
 
 /**
  * @brief Compare two key stored in the node of a BST
@@ -73,8 +72,11 @@ void destroyTree(BST* tree, int type){
     BST left=temp->l;
     BST right=temp->r;
 
-    if (temp->l != NULL)
-        destroyTree( &(temp->l),type);
+    if (left != NULL)
+        destroyTree(&left, type);
+
+    if (right != NULL)
+        destroyTree(&right, type);
 
     switch (type)
     {
@@ -88,9 +90,6 @@ void destroyTree(BST* tree, int type){
     default:
         break;
     }
-
-    if (right != NULL)
-        destroyTree( &right,type);
 }
 
 /**
@@ -146,7 +145,7 @@ int addNode(void* key,void* data, BST* tree, int type){
     while (1)
     {
         /* code */
-        int res =compareData(key,tmp->key,type);
+        int res = compareData(key,tmp->key,type);
 
         switch (res)
         {
@@ -176,12 +175,12 @@ int addNode(void* key,void* data, BST* tree, int type){
                 new_node->data=errors;
                 return BST_RES_SUCCESS;
             }
-        break;
+            break;
         
         default:
             
             if (type==BST_COMPARISON_BINMATRIX){
-                VectorList_addHead((BinMatrix*)data, (VectorList*) &(tmp->data) );
+                VectorList_addHead((BinMatrix*)data, (VectorList*)&(tmp->data) );
                 free(new_node);
             }
             return BST_RES_SUCCESS;

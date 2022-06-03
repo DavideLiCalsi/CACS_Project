@@ -3,12 +3,12 @@
 
 #include "../Matrix/BinaryMatrix.h"
 
-struct VectorNode{
+typedef struct _VectorNode{
     BinMatrix* v;
-    struct VectorNode* next;
-};
+    struct _VectorNode* next;
+}VectorNode;
 
-typedef struct VectorNode* VectorList;
+typedef VectorNode* VectorList;
 
 /**
  * @brief Prints a VectorList
@@ -17,12 +17,12 @@ typedef struct VectorNode* VectorList;
  */
 void VectorList_print(VectorList p){
 
-    VectorList temp=p;
+    VectorList curr=p;
 
-    while (temp!= NULL)
+    while (curr!= NULL)
     {
-        printMatrix(*(p->v));
-        temp=temp->next;
+        printMatrix(*(curr->v));
+        curr=curr->next;
     }
     
 }
@@ -31,12 +31,12 @@ void VectorList_print(VectorList p){
  * @brief Adds a new vector to the list
  * 
  * @param m The vector to add
- * @param p Pointer to the list
+ * @param p Pointer to the pointer to the list
  */
 void VectorList_addHead(BinMatrix* m, VectorList* p){
 
-    VectorList newNode = (VectorList) malloc(sizeof(struct VectorNode));
-    newNode->v=m;
+    VectorList newNode = (VectorList) malloc(sizeof(VectorNode));
+    newNode->v = m;
 
     if (*p==NULL){
         
@@ -48,6 +48,7 @@ void VectorList_addHead(BinMatrix* m, VectorList* p){
 
         newNode->next=*p;
         *p=newNode;
+
     }
 }
 
@@ -80,20 +81,52 @@ void VectorList_destroy(VectorList* l){
  * @param p 
  * @return VectorList 
  */
-VectorList VectorList_pop(VectorList* p){
+VectorList vectorList_pop(VectorList* p){
 
     if (*p == NULL){
         printf("End of vectorlist reached\n");
         return NULL;
     }
 
-    VectorList ret;
-    ret = *p;
+    VectorList ret = (VectorList)malloc(sizeof(VectorNode));
+    ret->v = copyMatrix((*p)->v);
+    VectorList old = *p;
     (*p)=(*p)->next;
+    //free(old);
 
-    VectorList_print(ret);
+    //VectorList_print(ret);
     return ret;
 }
+
+
+/**
+ * @brief get the element at position "index"
+ * 
+ * @param p input list
+ * @param index position of the element to take
+ * @return VectorList the element at position "index"
+ */
+VectorList vectorList_get(VectorList* p, int index){
+
+    if (*p == NULL){
+        printf("The list is empty!\n");
+        return NULL;
+    }
+
+    VectorList curr = *p;
+    int count = 0;
+    while (curr!=NULL){
+        if (count == index)
+            return curr;
+        count++;
+        curr = curr->next;
+    }
+
+    printf("The index %d is larger than the list's length!\n", index);
+    return NULL;
+
+}
+
 
 bool VectorList_search(BinMatrix v, VectorList l){
 

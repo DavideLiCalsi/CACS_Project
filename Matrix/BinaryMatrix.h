@@ -328,6 +328,33 @@ BinMatrix* buildMatrix(int* array, int rows, int cols){
     return m;
 }
 
+
+/**
+ * @brief return a copy of the input matrix
+ * 
+ * @param matrix input matrix
+ * @return BinMatrix* copy of the input matrix
+ */
+BinMatrix* copyMatrix(BinMatrix *matrix){
+
+    int rows = matrix->rows;
+    int cols = matrix->cols;
+
+    BinMatrix* m = (BinMatrix*)(malloc(sizeof(BinMatrix)));
+    unsigned long ulong_needed = 1 + matrix->rows*cols/ (8*sizeof(unsigned long));
+    m->rows=rows;
+    m->cols=cols;
+    m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
+
+    for(int i=0; i<rows; ++i)
+        for (int j=0; j<cols; j++)
+        if (putElement(m, i, j,getElement(*matrix,i,j)) != MATRIX_SUCCESS )
+            return NULL;
+
+    return m;
+
+}
+
 /**
  * @brief Destroys the input matrix, i.e. it frees all the
  * allocated memory

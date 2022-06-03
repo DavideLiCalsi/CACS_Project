@@ -11,8 +11,8 @@
 
 #define N 100
 
-unsigned long long binCoefficients[N][N];
-int valid[N][N];
+unsigned long long binCoeff[N][N];
+int isValid[N][N];
 
 
 /**
@@ -25,44 +25,44 @@ int valid[N][N];
 unsigned long long binomialCoefficients(unsigned int n, unsigned int k){
     // Base Cases
     if (k > n){
-        valid[n][k]=1;
-        binCoefficients[n][k]=0;
+        isValid[n][k]=1;
+        binCoeff[n][k]=0;
         return 0;
     }
     if (k == 0 || k == n)
     {
-        valid[n][k]=1;
-        binCoefficients[n][k]=1;
+        isValid[n][k]=1;
+        binCoeff[n][k]=1;
         return 1;
     }
     if (k==1)
     {
-        valid[n][k]=1;
-        binCoefficients[n][k]= n;
+        isValid[n][k]=1;
+        binCoeff[n][k]= n;
         return n;
     }
 
-    if (valid[n][k] != -1)
-        return binCoefficients[n][k];
+    if (isValid[n][k] != -1)
+        return binCoeff[n][k];
  
     // Recur
     unsigned int t1,t2;
 
-    if (valid[n-1][k-1] == -1){
+    if (isValid[n-1][k-1] == -1){
         t1=binomialCoefficients(n - 1, k - 1);
-        binCoefficients[n-1][k-1]=t1;
-        valid[n-1][k-1]=1;
+        binCoeff[n-1][k-1]=t1;
+        isValid[n-1][k-1]=1;
     }
     else
-        t1=binCoefficients[n-1][k-1];
+        t1=binCoeff[n-1][k-1];
 
-    if (valid[n-1][k] == -1){
+    if (isValid[n-1][k] == -1){
         t2=binomialCoefficients(n - 1, k);
-        binCoefficients[n-1][k]=t2;
-        valid[n-1][k]=1;
+        binCoeff[n-1][k]=t2;
+        isValid[n-1][k]=1;
     }
     else
-        t1=binCoefficients[n-1][k];
+        t1=binCoeff[n-1][k];
 
     return t1+t2;
 }
@@ -78,16 +78,16 @@ void precomputeBinomialCoefficients(unsigned int n, unsigned int w){
 
     unsigned int m,t;
 
-    for (m = 1; m <= n; m++) binCoefficients[0][m] = 0;
-    for (t = 0; t <= w; t++) binCoefficients[t][0] = 1;
+    for (m = 1; m <= n; m++) binCoeff[0][m] = 0;
+    for (t = 0; t <= w; t++) binCoeff[t][0] = 1;
 
     for (m = 1; m <= n; m++)
         for (t = 1; t <= N; t++)
-            binCoefficients[m][t] = binCoefficients[m-1][t-1] + binCoefficients[m-1][t];
+            binCoeff[m][t] = binCoeff[m-1][t-1] + binCoeff[m-1][t];
 
    /* for(m=0; m<N;++m)
         for(t=0;t<N;++t)
-            printf("%u %u %llu\n", m,t,binCoefficients[m][t]);
+            printf("%u %u %llu\n", m,t,binCoeff[m][t]);
     */
     
 }
@@ -104,14 +104,12 @@ void precomputeBinomialCoefficients(unsigned int n, unsigned int w){
 int gilbertVashamovDistance(int n, int k, int q){
 
     unsigned long long y = pow(q, n-k);
-    printf("%lld\n", y);
     int distance = 1;
 
     unsigned long long partial_sum = 0;
     while(partial_sum <= y){
         distance++;
         partial_sum += binomialCoefficients(n,distance-1)*pow(q-1,distance-1);
-        printf("%d--%d\n", n, distance);
     }
     return distance;
 }
@@ -142,7 +140,8 @@ int computeLn(int n, int k, int e){
  */
 BinMatrix* standardizeGeneratorMatrix(BinMatrix *generator){
 
-    int k = generator->rows;    // generator is a (k x n) matrix
+    // generator is a (k x n) matrix
+    int k = generator->rows;
     
 
     // goal: make the first kxk matrix an Identity (generator = g)
@@ -151,7 +150,7 @@ BinMatrix* standardizeGeneratorMatrix(BinMatrix *generator){
         /** 
         * Step 1) If g_jj != 0, go to Step 2. If g_jj==0, and if for some i>j, g_ij != 0, then interchange row_j and row_i.
         *         If g_jj==0 and g_ij==0 for all i>j, then choose h such that g_jh != 0 and interchange col_j and col_h.
-        *         (last case is impossibile because the k columns should be linear indipendet (belonging to the Information Set))
+        *         (last case is impossibile because the k columns should be linear indipendent (belonging to the Information Set))
         */
         if (getElement(*generator,j,j) == 0){
             bool success = false;
@@ -186,22 +185,22 @@ BinMatrix* standardizeGeneratorMatrix(BinMatrix *generator){
  */
 BinMatrix* standardizeParityMatrix(BinMatrix *parityMatrix){
 
-    // parityMatrix is a (k x n) matrix
-    int k = parityMatrix->rows;
-    int n = parityMatrix->cols;
+    // parityMatrix is a (n-k) x n matrix
+    int rows = parityMatrix->rows;
+    int cols = parityMatrix->cols;
     
 
-    // goal: make the first kxk matrix an Identity (parityMatrix = g)
-    for (int z=0, j = n-k; z < k; z++, j++){
+    // goal: make the first (n-k)x(n-k) matrix an Identity (parityMatrix = g)
+    for (int z=0, j = rows; z < rows; z++, j++){
 
         /** 
         * Step 1) If g_zj != 0, go to Step 2. If g_zj==0, and if for some i>z, g_ij != 0, then interchange row_z and row_i.
         *         If g_zj==0 and g_ij==0 for all i>z, then choose h such that g_zh != 0 and interchange col_j and col_h.
-        *         (last case is impossibile because the n-k columns should be linear indipendet (belonging to the Information Set))
+        *         (last case is impossibile because the n-k columns should be linear indipendent (belonging to the Information Set))
         */
         if (getElement(*parityMatrix,z,j) == 0){
             bool success = false;
-            for (int i=z+1; i<k && !success; i++){
+            for (int i=z+1; i<rows && !success; i++){
                 if (getElement(*parityMatrix,i,j) != 0){
                     swapRows(parityMatrix,z,i);
                     success = true;
@@ -215,7 +214,7 @@ BinMatrix* standardizeParityMatrix(BinMatrix *parityMatrix){
         /**
          * Step 3) We now have g_zj==1. For each of i>=0 and i<k (i!=z), replace row_i by row_i - g_ij*row_z
          */
-        for (int i=0; i<k; i++)
+        for (int i=0; i<rows; i++)
             if (getElement(*parityMatrix,i,j) != 0 && i!=z)
                 addRows(parityMatrix, i, z);
     }
