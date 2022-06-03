@@ -284,7 +284,7 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, VectorList* el, VectorList* er){
     if (node != NULL){
         *er = (VectorList) Xr->data;
         *el = (VectorList) node->data;
-        printf("FOUND!\n");
+        //printf("FOUND!\n");
         return true;
     }
     else{
@@ -405,7 +405,7 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     // Build the tables E(1),...,E(d)
     for (t=1; t<=d;++t){
         tables[t]=NULL;
-        findEqualSize_u_m(2*s.cols,t,1.05,&tables[t]);
+        findEqualSize_u_m(2*s.cols,t,1.25,&tables[t]);
         //printf("Found E(%d)\n",t);
     }
 

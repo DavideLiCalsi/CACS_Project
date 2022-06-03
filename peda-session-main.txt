@@ -1,6 +1,4 @@
-break getInformationSet
-break /home/davidelicalsi/CACS/CACS_Project/Supercode/Supercode.h:219
-
-
-
+break SupercodeDecoding
+break /home/davidelicalsi/CACS/CACS_Project/Supercode/Supercode.h:299
+break printf
 

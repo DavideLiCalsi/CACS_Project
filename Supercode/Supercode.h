@@ -172,10 +172,10 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             }
         }
 
-        BinMatrix* syndrome = product(H,*full_vector);
+        BinMatrix* syndrome = product(H,*transpose(*full_vector));
         BinMatrix* zero = zeroVector(gamma_len);
 
-        if (compareVectors(*syndrome,*zero)==0)
+        if (compareVectors(*transpose(*syndrome),*zero)==0)
             continue;
 
         // Now check if you improved the distance
@@ -224,8 +224,8 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k){
 
         //printf("Determinant %d\n",det);
 
-        if (det==1 ){
-            printf("Stopped at %d\n",i);
+        if (true ){
+            printf("Stopped at %dth random set\n",i);
             quicksort(gamma->data,0,k-1);
             destroyMatrix(H_sub);
             return gamma;
@@ -233,6 +233,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k){
 
         destroyMatrix(H_sub);
         destroySet(gamma);
+        i++;
     }while (true);
     
 }
@@ -280,6 +281,11 @@ void SupercodeDecoding(BinMatrix H, BinMatrix b, int n,int k, int e,int y, int d
 
         printf("Found H'\n");
         printMatrix(*H_prime);
+
+        int a_vect[20]={0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1};
+        BinMatrix* a=buildMatrix(a_vect,20,1);
+        printMatrix(*product(*H_prime,*a));
+        printMatrix(*product(H,*a));
         /*BinMatrix* H_stand=standardizeParityMatrix(&H);
         printMatrix(*H_stand);*/
 
@@ -294,6 +300,8 @@ void SupercodeDecoding(BinMatrix H, BinMatrix b, int n,int k, int e,int y, int d
 
         // Iterate s times
         for (int j=0;j<s;++j){
+
+            printf("\nITERATION %d/%d\n",j+1,s);
 
             // We are splitting for the last time
             if (j==s-1 && (n-k)%y != 0){
@@ -319,16 +327,31 @@ void SupercodeDecoding(BinMatrix H, BinMatrix b, int n,int k, int e,int y, int d
 
             VectorList u_1=NULL;
             VectorList u_2=NULL;
-            SplitSyndrome(*H_i,*s_i,2, &u_1,&u_2);
+
+            printf("Applying SplitSyndrome on s_i:\n");
+            printMatrix(*s_i);
+            printf("and H_i\n");
+            printMatrix(*H_i);
+            SplitSyndrome(*H_i,*s_i,3, &u_1,&u_2);
 
             if (u_1==NULL)
-                puts("U1 null");
-            puts("U_1");
-            VectorList_print(u_1);
+                puts("U_1 is null");
+            else{
+                puts("Found U_1:");
+                VectorList_print(u_1);
+            }
+            
+            if (u_2==NULL)
+                puts("U_2 is null");
+            else{
+                puts("Found U_2:");
+                VectorList_print(u_2);
+            }
+
             K[j]=u_1;
         }
 
-        printf("Building K(gamma), containing %d lists\n",s);
+        printf("\n K(gamma), containing %d lists\n",s);
         buildKGamma(K,s,2,&KGamma);
         printf("Gamma successfully built\n");
 
@@ -342,7 +365,8 @@ void SupercodeDecoding(BinMatrix H, BinMatrix b, int n,int k, int e,int y, int d
             BinMatrix* u_full=concat(*ul,*ur,0);
             BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_ROWS);
             BinMatrix* b_Gamma_t=transpose(*b_Gamma);
-            printMatrix(*b_Gamma);
+            puts("B(gamma)");
+            printMatrix(*b_Gamma_t);
             BinMatrix* m = vectorSum(*b_Gamma_t,*u_full);
 
             printf("Found m:\n");
@@ -362,11 +386,12 @@ void SupercodeDecoding(BinMatrix H, BinMatrix b, int n,int k, int e,int y, int d
            temp=temp->next;
         }
         
-
+        puts("\n\n");
     }
 
     printf("FINAL GUESS: ");
     printMatrix(*decoded);
-    printf("%d\n",HammingDistance(*decoded,*transpose(b)) );
+    printf("Final distance: %d\n",HammingDistance(*decoded,*transpose(b)) );
+    printf("Stored final distance: %d\n",best_dist);
 
 }

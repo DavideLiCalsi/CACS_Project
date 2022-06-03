@@ -91,7 +91,7 @@ VectorList VectorList_pop(VectorList* p){
     ret = *p;
     (*p)=(*p)->next;
 
-    VectorList_print(ret);
+    //VectorList_print(ret);
     return ret;
 }
 

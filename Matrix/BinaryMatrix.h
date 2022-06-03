@@ -403,8 +403,7 @@ BinMatrix* identityMatrix(int k){
     }
 
     int ulong_needed = ceil ( (k*k) *1.0/ (8*sizeof(unsigned long)) );
-
-    printf("%d\n",ulong_needed);
+    
     BinMatrix* res = (BinMatrix*) malloc(sizeof(BinMatrix));
     res->rows=k;
     res->cols=k;
