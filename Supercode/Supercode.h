@@ -3,7 +3,6 @@
 #include "../Utilities/utilities.h"
 #include <stdbool.h>
 
-VectorList examined=NULL;
 
 /**
  * @brief Searches a vector in some lists and counts
@@ -21,16 +20,19 @@ void searchInLists(VectorList* lists, BinMatrix vector, int len,int* counter){
     for(i=0;i<len;++i){
 
         VectorList list=lists[i];
-
         VectorList temp=list;
 
         while (temp != NULL)
         {   
-            // If you found the target, update counter
-            if (compareMatrices(vector,*(temp->v))==0){
+            /*puts("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+            printMatrix(vector);
+            printMatrix(*(temp->v));
+            printf("%d\n", compareVectors(vector,*(temp->v)));
+            puts("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");*/
 
-                *counter = *counter +1;
-            }
+            // If you found the target, update counter
+            if (compareVectors(vector,*(temp->v)) == 0)
+                *counter = *counter + 1;
 
             temp=temp->next;
         }
@@ -51,34 +53,35 @@ void searchInLists(VectorList* lists, BinMatrix vector, int len,int* counter){
 void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
 
     int i,counter;
-    VectorList* list;
+    VectorList examined=NULL;
+
 
     for (i=0;i<len;++i){
 
         
-        // Retrieve Ki
+        // Retrieve K_i
         printf("Working on K(%d)\n",i);
-        lists[i];
-        VectorList vector=lists[i];
-        counter=0;
+        VectorList vector;
+        int index = 0;
         
-        // iterate over all the vectors in Ki
+        // iterate over all the vectors in K_i
         while (1)
-        {
-            vector=vectorList_pop(lists+i);
+        {   
+            counter=0;
+            vector=vectorList_get(&lists[i], index);
+            index++;
 
             if (vector==NULL)
                 break;
 
             // Search the vector in all the remaining lists
             if (!VectorList_search(*vector->v,examined))
-                searchInLists(lists+i,*vector->v,len-i,&counter);
+                searchInLists(lists,*vector->v,len-i,&counter);
             
             // Store the vector in the list of the vectors that you already searched
             VectorList_addHead(vector->v,&examined);
 
             // If it appeared in more than l lists, add it to KGamma
-            printf("COUNTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT: %d\n", counter);
             if (counter>=l)
                 VectorList_addHead(vector->v,KGamma);
         }
@@ -117,16 +120,17 @@ void incrementVector(BinMatrix* v){
  * @param gamma The information set
  * @param m The ref vector
  * @param b The vector to decode
- * @param guess The current best guess
+ * @param guess The pointer to the pointer to the current best guess
  * @param guess_dist The best distance so far
  */
-void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,BinMatrix* guess, int* guess_dist){
+void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,BinMatrix** guess, int* guess_dist){
 
     int* indexes=gamma->data;
     int gamma_len=gamma->length;
-    int n=b.rows;
+    int n=b.cols;
+    BinMatrix *H_t = transpose(H);
 
-    quicksort(indexes,0,gamma_len);
+    // quicksort(indexes,0,gamma_len-1); likely to be useless (indeces already sorted)
 
     BinMatrix* full_vector;
 
@@ -139,12 +143,9 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
 
     int i;
     int gamma_index, curr_trial_index;
-
-    puts("STARTING COMPARISON!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
     // TODO: add check that the generated vector is a valid codeword
     while (compareVectors(*curr_trial,*final)!=0)
-    {
+    {   
         // Initialize the full vector to all zeros
         full_vector=zeroVector(n);
 
@@ -155,10 +156,10 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         gamma_index=0;
         curr_trial_index=0;
         for (i=0;i<n;++i){
-            
+
             // This position is in gamma
-            if (i==indexes[gamma_index]){
-                //puts("In gamma");
+            if (gamma_index < gamma_len && i==indexes[gamma_index]){
+
                 char entry=getElement(m,0,gamma_index);
 
                 if (entry!=0)
@@ -167,36 +168,35 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
                 gamma_index++;
             }
             else{ //This position is not in gamma
-                //puts("NOT gamma");
+
                 char entry=getElement(*curr_trial,0,curr_trial_index);
 
                 if (entry!=0)
                     putElement(full_vector,0,i,entry);
                 
                 curr_trial_index++;
-
             }
         }
 
-        BinMatrix* syndrome = product(H,*full_vector);
+        BinMatrix* syndrome = product(*full_vector, *H_t);
         BinMatrix* zero = zeroVector(gamma_len);
-        printMatrix(*syndrome);
+        //printMatrix(*syndrome);
 
-        if (compareVectors(*syndrome,*zero)==0)
+        if (compareVectors(*syndrome,*zero)!=0)
             continue;
 
         // Now check if you improved the distance
-        int new_dist = HammingDistance(*transpose(b),*full_vector);
+        int new_dist = HammingDistance(b,*full_vector);
 
-        //printf("NEW DIST: %d\n",new_dist);
+        printf("NEW DIST: %d\n",new_dist);
+        printMatrix(*full_vector);
 
         // If you improved the distance, update your guess
         if (new_dist<*guess_dist){
-            printf("Improved: new dist %d\n",new_dist);
+            printf("Improved: new dist %d\nnew_vector: ",new_dist);
             printMatrix(*full_vector);
-            printMatrix(b);
-            BinMatrix* old=guess;
-            *guess=*full_vector;
+            BinMatrix* old=*guess;
+            *guess=full_vector;
             *guess_dist=new_dist;
             destroyMatrix(old);
         }
@@ -245,7 +245,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
     
 }
 
-void SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int e, int y, int d){
+BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int e, int y, int d){
 
     BinMatrix *H_t = transpose(H);
 
@@ -322,7 +322,7 @@ void SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int 
         int* indexes = (int*) malloc(sizeof(int)*y);
 
         // An array of VectorLists that will contain the results of SplitSyndrome
-        VectorList* K = (VectorList*) malloc(sizeof(VectorList)*s);
+        VectorList* K = (VectorList*)malloc(sizeof(VectorList)*s);
 
         // Iterate s times
         for (int j=0;j<s;++j){
@@ -353,7 +353,7 @@ void SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int 
             VectorList u_2=NULL;
             SplitSyndrome(*H_i,*s_i,2, &u_1,&u_2);
 
-            puts("INIT---U_1");
+            /*puts("INIT---U_1");
             VectorList_print(u_1);
             puts("INIT----U_2");
             VectorList_print(u_2);
@@ -362,23 +362,26 @@ void SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int 
             printMatrix(*con);
             puts("SYNDROME");
             printMatrix(*product(*con, *H_t));
-            scanf("%d", &k);
-            puts("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ");
-            K[j]=u_1;
+            scanf("%d", &k);*/
             
+            K[j]=u_1;
+
         }
 
         // The list of vectors KGamma
         VectorList KGamma=NULL;
         printf("Building K(gamma), containing %d lists\n",s);
-        buildKGamma(K,s,2,&KGamma);
-        printf("Gamma successfully built\n");
+        buildKGamma(K,s,1,&KGamma);
+        //printf("Gamma successfully built\n");
+
+        puts("SOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOS");
+        VectorList_print(KGamma);
+        if (KGamma == NULL)printf("WARNING: iteration %d\n", i);
+        puts("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 
         // Inspect the list KGamma
         VectorList temp=KGamma;
-
-        if (temp == NULL && KGamma == NULL)printf("WARNIIIIIIIIIIIIIIIIIIIIIIG: iteration %d", i);
-
+        
         while (temp != NULL)
         {
             BinMatrix* ul = temp->v;
@@ -386,31 +389,31 @@ void SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int 
             BinMatrix* u_full=concat(*ul,*ur,0);
             BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
             //BinMatrix* b_Gamma_t=transpose(*b_Gamma);
-            printMatrix(*b_Gamma);
+            //printMatrix(*b_Gamma);
             BinMatrix* m = vectorSum(*b_Gamma,*u_full);
 
             printf("Found m:\n");
             printMatrix(*m);
 
-            /*
-            Iterate over the vectors c' whose projection on Gamma 
-            equals m
-            */
-           loopOverProjectionOnGamma(gamma,*m,*H_prime,b,decoded,&best_dist);
+            // Iterate over the vectors c' whose projection on Gamma equals m
+            loopOverProjectionOnGamma(gamma,*m,H,b,&decoded,&best_dist);
 
-           // Cleaning
-           destroyMatrix(ul);
-           destroyMatrix(b_Gamma);
-           destroyMatrix(m);
+            // Cleaning
+            destroyMatrix(ul);
+            destroyMatrix(b_Gamma);
+            destroyMatrix(m);
 
-           temp=temp->next;
+            temp=temp->next;
         }
-        
 
     }
 
-    printf("FINAL GUESS: ");
+    /*printf("FINAL GUESS: ");
     printMatrix(*decoded);
-    printf("%d\n",HammingDistance(*decoded,b) );
+    printMatrix(b);*/
+    //BinMatrix *pr = product(*decoded,*H_t);
+    //printMatrix(*pr);
+
+    return decoded;
 
 }

@@ -40,83 +40,7 @@ struct BinMatrix{
 
 typedef struct BinMatrix BinMatrix;
 
-/**
- * @brief Compare two row vectors. Comparison is done
- * by interpreting the two vectors as binary integers
- *
- * @param v1
- * @param v2
- * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
- */
-int compareVectors(BinMatrix v1, BinMatrix v2){
 
-    if (!isRowVector(v1) || !isRowVector(v2)){
-        printf("I can only compare two row vectors\n");
-        return MATRIX_INVALID_ELEMENT;
-    }
-
-    if (v1.cols != v2.cols){
-        printf("Cannot compare two vectors of size %d and %d\n", v1.cols,v2.cols);
-        return MATRIX_INVALID_ELEMENT;
-    }
-
-    int ulong_needed = 1 + v1.cols / (8*sizeof(unsigned long));
-    int excess = v1.cols % (8*sizeof(unsigned long));
-    unsigned long w1,w2;
-
-    for (int i=0; i<ulong_needed;++i){
-
-        w1 = v1.data[i];
-        w2 = v2.data[i];
-
-        if (i<ulong_needed-1){
-
-            if (w1 > w2)
-                return 1;
-
-            if (w1<w2)
-                return -1;
-        }
-        else{
-
-            w1 = v1.data[i] >> (8*sizeof(unsigned long)-excess);
-            w2 = v2.data[i] >> (8*sizeof(unsigned long)-excess);
-
-            if (w1 > w2)
-                return 1;
-
-            if (w1<w2)
-                return -1;
-
-            if (w1==w2)
-                return 0;
-        }
-    }
-}
-
-/**
- * @brief Compare the two matrices
- *
- * @param m1 First matrix
- * @param m2 Second matrix
- * @return true The matrices are equal
- * @return false They are different
- */
-bool compareMatrices(BinMatrix m1, BinMatrix m2){
-
-    if (m1.cols!=m2.cols || m1.rows != m2.rows)
-        return false;
-
-    int needed_ulongs = 1 + (m1.rows * m2.cols) / (8*sizeof(unsigned long));
-
-    for (int i=0; i<needed_ulongs;++i){
-
-        if (m1.data[i] != m2.data[i])
-            return false;
-    }
-
-    return true;
-}
 
 /**
  * @brief Get the Element of indexes (i,j)
@@ -187,6 +111,106 @@ int putElement(BinMatrix* m, int i, int j, int val){
         return MATRIX_FAILURE;
     }
 }
+
+
+
+/**
+ * @brief Pretty prints the input matrix
+ *
+ * @param m The input matrix
+ */
+void printMatrix(BinMatrix m){
+
+    printf("Matrix(%d rows, %d cols)\n",m.rows,m.cols);
+
+    for(int i=0;i<m.rows;++i){
+        for(int j=0;j<m.cols;++j){
+            printf("%d ",getElement(m,i,j));
+        }
+        printf("\n");
+    }
+
+}
+
+
+
+/**
+ * @brief Compare two row vectors. Comparison is done
+ * by interpreting the two vectors as binary integers
+ *
+ * @param v1
+ * @param v2
+ * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
+ */
+int compareVectors(BinMatrix v1, BinMatrix v2){
+
+    if (!isRowVector(v1) || !isRowVector(v2)){
+        printf("I can only compare two row vectors\n");
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    if (v1.cols != v2.cols){
+        //printf("Cannot compare two vectors of size %d and %d\n", v1.cols,v2.cols);
+        return MATRIX_INVALID_ELEMENT;
+    }
+
+    int ulong_needed = 1 + v1.cols / (8*sizeof(unsigned long));
+    int excess = v1.cols % (8*sizeof(unsigned long));
+    unsigned long w1,w2;
+
+    for (int i=0; i<ulong_needed;++i){
+
+        w1 = v1.data[i];
+        w2 = v2.data[i];
+
+        if (i<ulong_needed-1){
+
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+        }
+        else{
+
+            w1 = v1.data[i] >> (8*sizeof(unsigned long)-excess);
+            w2 = v2.data[i] >> (8*sizeof(unsigned long)-excess);
+
+            if (w1 > w2)
+                return 1;
+
+            if (w1<w2)
+                return -1;
+
+            if (w1==w2)
+                return 0;
+        }
+    }
+}
+
+/**
+ * @brief Compare the two matrices
+ *
+ * @param m1 First matrix
+ * @param m2 Second matrix
+ * @return true The matrices are equal
+ * @return false They are different
+ */
+bool compareMatrices(BinMatrix m1, BinMatrix m2){
+
+    if (m1.cols!=m2.cols || m1.rows != m2.rows)
+        return false;
+
+    int needed_ulongs = 1 + (m1.rows * m1.cols) / (8*sizeof(unsigned long));
+
+    for (int i=0; i<needed_ulongs;++i){
+        if (m1.data[i] != m2.data[i])
+            return false;
+    }
+
+    return true;
+}
+
 
 
 /**
@@ -273,24 +297,6 @@ BinMatrix* transpose(BinMatrix m){
     }
 
     return m_t;
-}
-
-/**
- * @brief Pretty prints the input matrix
- *
- * @param m The input matrix
- */
-void printMatrix(BinMatrix m){
-
-    printf("Matrix(%d rows, %d cols)\n",m.rows,m.cols);
-
-    for(int i=0;i<m.rows;++i){
-        for(int j=0;j<m.cols;++j){
-            printf("%d ",getElement(m,i,j));
-        }
-        printf("\n");
-    }
-
 }
 
 
@@ -971,15 +977,41 @@ BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
  */
 int HammingDistance(BinMatrix m1, BinMatrix m2){
 
-    int i;
-    int dist=0;
+    if (m1.rows >1 || m2.rows >1){
+        puts("Hamming distance can be computed between row vectors!!!");
+        return -1;
+    }
 
-    for(i=0;i< m1.cols;++i){
+    int dist=0;
+    for(int i=0;i< m1.cols;++i){
         if (getElement(m1,0,i)!=getElement(m2,0,i))
             dist++;
     }
-
     return dist;
+}
+
+
+/**
+ * @brief Computes the hamming weight of a row vector
+ *
+ * @param m1
+ * @param m2
+ * @return int The hamming weight
+ */
+int HammingWeight(BinMatrix m1){
+
+    if (m1.rows >1){
+        puts("Hamming distance can be computed between row vectors!!!");
+        return -1;
+    }
+
+    int weight=0;
+
+    for(int i=0; i< m1.cols; ++i)
+        if (getElement(m1,0,i) == 1)
+            weight++;
+    
+    return weight;
 }
 
 /**

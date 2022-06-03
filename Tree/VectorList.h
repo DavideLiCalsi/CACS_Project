@@ -90,6 +90,7 @@ VectorList vectorList_pop(VectorList* p){
 
     VectorList ret = (VectorList)malloc(sizeof(VectorNode));
     ret->v = copyMatrix((*p)->v);
+    ret->next = NULL;
     VectorList old = *p;
     (*p)=(*p)->next;
     //free(old);
@@ -116,13 +117,17 @@ VectorList vectorList_get(VectorList* p, int index){
     VectorList curr = *p;
     int count = 0;
     while (curr!=NULL){
-        if (count == index)
-            return curr;
+        if (count == index){
+            VectorList ret = (VectorList)malloc(sizeof(VectorNode));
+            ret->v = copyMatrix(curr->v);
+            ret->next = NULL;
+            return ret;
+        }
         count++;
         curr = curr->next;
     }
 
-    printf("The index %d is larger than the list's length!\n", index);
+    //printf("The index %d is larger than the list's length!\n", index);
     return NULL;
 
 }
@@ -134,7 +139,7 @@ bool VectorList_search(BinMatrix v, VectorList l){
 
     while (temp!=NULL)
     {
-        if (compareMatrices(v,*temp->v)==0)
+        if (compareMatrices(v,*temp->v)==true)
             return true;
 
         temp=temp->next;

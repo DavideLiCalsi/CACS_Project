@@ -1,5 +1,5 @@
 //#include "Matrix.h"
-//#include "Matrix/BinaryMatrix.h"
+#include "Matrix/BinaryMatrix.h"
 #include "SplitSyndrome/SplitSyndrome.h"
 #include "Utilities/dataReader.h"
 #include "Utilities/utilities.h"
@@ -7,7 +7,7 @@
 
 int main(){
 
-    int seed = 513;   // fixed for repeatability
+    int seed = 5;   // fixed for repeatability
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
@@ -38,7 +38,7 @@ int main(){
 
     SplitSyndrome(*H,*syndrome,info->w,&l,&r);
 
-    puts("INIT---l");
+    /*puts("INIT---l");
     VectorList_print(l);
     puts("INIT----r");
     VectorList_print(r);
@@ -47,7 +47,7 @@ int main(){
     printMatrix(*con);
     puts("SYNDROME");
     printMatrix(*product(*con, *H_t));
-    //scanf("%d", &seed);
+    scanf("%d", &seed);*/
 
     //int b_vect[20]={ 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
     //BinMatrix* b= buildMatrix(b_vect,20,1);
@@ -57,8 +57,22 @@ int main(){
 
     precomputeBinomialCoefficients(info->n,(info->n)/2);
 
-    int e=2,y=5;
-    SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
+    int e=2,y=2;
+    BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
+
+    printf("\ndistance from the received codeword: %d\n",HammingDistance(*decoded,*receivedCodeword) );
+    printf("distance from the original codeword: %d\n\n",HammingDistance(*decoded,*codeword) );
+
+    printf("Supercode Decoding guess: ");
+    printMatrix(*decoded);
+    printf("Original codeword: ");
+    printMatrix(*codeword);
+    printf("Error: ");
+    printMatrix(*error);
+    printf("Received codeword: ");
+    printMatrix(*receivedCodeword);
+
+    //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
     
     return 0;
 }
