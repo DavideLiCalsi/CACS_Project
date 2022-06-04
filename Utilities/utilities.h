@@ -291,7 +291,11 @@ BinMatrix *generateError(int n, int w, int seed){
     for (int i=0; i<selected_indeces->length; i++)
         error_array[selected_indeces->data[i]] = 1;
 
-    return buildMatrix(error_array, 1, n);
+    destroySet(selected_indeces);
+
+    BinMatrix *error = buildMatrix(error_array, 1, n);
+    free(error_array);
+    return error;
 }
 
 typedef struct _allBinaryString{

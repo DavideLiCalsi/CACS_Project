@@ -230,7 +230,7 @@ BinMatrix* getRow(BinMatrix m, int i){
     row->rows=1;
     row->cols=m.cols;
 
-    int needed_u_long = 1 + (row->rows*row->cols) / (8*sizeof(unsigned long));
+    int needed_u_long = ceil ( (row->rows*row->cols)*1.0 / (8*sizeof(unsigned long)) );
     row->data= (unsigned long*) malloc(sizeof(unsigned long) * needed_u_long);
     memset(row->data,0,sizeof(unsigned long) * needed_u_long);
 
@@ -261,9 +261,10 @@ BinMatrix* getColumn(BinMatrix m, int j){
     col->rows=m.rows;
     col->cols=1;
 
-    int needed_u_long = ceil( (col->rows*col->cols) / (8*sizeof(unsigned long)) );
+    int needed_u_long = ceil( (col->rows*col->cols)*1.0 / (8*sizeof(unsigned long)) );
     col->data= (unsigned long*) malloc(sizeof(unsigned long) * needed_u_long);
     memset(col->data,0,sizeof(unsigned long) * needed_u_long);
+    
 
     for(int i=0; i<m.rows;++i){
         unsigned long new = (unsigned long) getElement(m,i,j);

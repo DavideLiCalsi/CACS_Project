@@ -136,7 +136,6 @@ bool updateIndexes(int* indexes, int* moduli, int u){
     }
 
     int count;
-    //puts("After");
     for (i=0; i<u; ++i){
 
         if (indexes[i]!=0 && indexes[i+1]==0 && !clean && i!=u-1  ){
@@ -182,7 +181,6 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         BinMatrix* e = buildMatrix(array,1,m);
         BinMatrix* s = product(*e,H_l_r);
         addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
-        //printf("Tested 1 vector\n");
         free(indexes);
         free(moduli);
         free(array);
@@ -410,8 +408,8 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     // First do the precomputation step
     //printf("Starting the precomputation stage\n");
 
-    // Compute some bin coefficients
-    precomputeBinCoefficients(100,100);
+    // Compute some bin coefficients (already computed in main)
+    // precomputeBinCoefficients(100,100);
 
     // Build the tables E(1),...,E(d)
     for (t=1; t<=d;++t){

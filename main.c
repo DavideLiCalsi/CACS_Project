@@ -25,14 +25,14 @@ int main(){
     destroyMatrix(I);
 
     BinMatrix *codeword = generateCodeword(G, seed);
-    printMatrix(*codeword);
+    //printMatrix(*codeword);
     BinMatrix *error = generateError(info->n, info->w, seed);
-    printMatrix(*error);
+    //printMatrix(*error);
     BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
-    printMatrix(*receivedCodeword);
+    //printMatrix(*receivedCodeword);
 
     BinMatrix *syndrome = product(*receivedCodeword, *H_t);
-    printMatrix(*syndrome);
+    //printMatrix(*syndrome);
 
     VectorList l = NULL;
     VectorList r = NULL;
@@ -61,7 +61,7 @@ int main(){
     int e=3,y=5;
     BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
 
-    printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
+    /*printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
     printf("Dist(original codeword,received codeword): %d\n\n",HammingDistance(*receivedCodeword,*codeword) );
 
     printf("Supercode Decoding guess: ");
@@ -80,9 +80,21 @@ int main(){
     printMatrix(*product(*H,*transpose(*decoded) ) );
 
     printf("Syndrome of received codeword ");
-    printMatrix(*product(*H,*transpose(*receivedCodeword) ) );
+    printMatrix(*product(*H,*transpose(*receivedCodeword) ) );*/
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
+
+    destroyInfo(info);
+    destroyMatrix(H);
+    destroyMatrix(H_t);
+    destroyMatrix(G);
+    destroyMatrix(codeword);
+    destroyMatrix(error);
+    destroyMatrix(receivedCodeword);
+    destroyMatrix(syndrome);
+    destroyMatrix(decoded);
+    VectorList_destroy(&l);
+    VectorList_destroy(&r);
     
     return 0;
 }
