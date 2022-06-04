@@ -9,89 +9,6 @@
 #include "dataStructures.h"
 #include "randomSelector.h"
 
-#define N 100
-
-unsigned long long binCoeff[N][N];
-int isValid[N][N];
-
-
-/**
- * @brief compute the (n,k) binomial coefficient
- * 
- * @param n 
- * @param k 
- * @return int 
- */
-unsigned long long binomialCoefficients(unsigned int n, unsigned int k){
-    // Base Cases
-    if (k > n){
-        isValid[n][k]=1;
-        binCoeff[n][k]=0;
-        return 0;
-    }
-    if (k == 0 || k == n)
-    {
-        isValid[n][k]=1;
-        binCoeff[n][k]=1;
-        return 1;
-    }
-    if (k==1)
-    {
-        isValid[n][k]=1;
-        binCoeff[n][k]= n;
-        return n;
-    }
-
-    if (isValid[n][k] != -1)
-        return binCoeff[n][k];
- 
-    // Recur
-    unsigned int t1,t2;
-
-    if (isValid[n-1][k-1] == -1){
-        t1=binomialCoefficients(n - 1, k - 1);
-        binCoeff[n-1][k-1]=t1;
-        isValid[n-1][k-1]=1;
-    }
-    else
-        t1=binCoeff[n-1][k-1];
-
-    if (isValid[n-1][k] == -1){
-        t2=binomialCoefficients(n - 1, k);
-        binCoeff[n-1][k]=t2;
-        isValid[n-1][k]=1;
-    }
-    else
-        t1=binCoeff[n-1][k];
-
-    return t1+t2;
-}
-
-/**
- * @brief Precomputes and stores all the coefficients of the type binCoeff(n-m,t)
- * for m from 1 to n-1 and t from 1 to w
- * 
- * @param n 
- * @param t 
- */
-void precomputeBinomialCoefficients(unsigned int n, unsigned int w){
-
-    unsigned int m,t;
-
-    for (m = 1; m <= n; m++) binCoeff[0][m] = 0;
-    for (t = 0; t <= w; t++) binCoeff[t][0] = 1;
-
-    for (m = 1; m <= n; m++)
-        for (t = 1; t <= N; t++)
-            binCoeff[m][t] = binCoeff[m-1][t-1] + binCoeff[m-1][t];
-
-   /* for(m=0; m<N;++m)
-        for(t=0;t<N;++t)
-            printf("%u %u %llu\n", m,t,binCoeff[m][t]);
-    */
-    
-}
-
 
 /**
  * @brief compute the Gilbert-Vashamov distance (d_0)
@@ -109,7 +26,7 @@ int gilbertVashamovDistance(int n, int k, int q){
     unsigned long long partial_sum = 0;
     while(partial_sum <= y){
         distance++;
-        partial_sum += binomialCoefficients(n,distance-1)*pow(q-1,distance-1);
+        partial_sum += binomialCoeff(n,distance-1)*pow(q-1,distance-1);
     }
     return distance;
 }
@@ -126,7 +43,7 @@ int gilbertVashamovDistance(int n, int k, int q){
 int computeLn(int n, int k, int e){
 
     int GV_distance = gilbertVashamovDistance(n, k, 2);
-    return (n*log(n)/log(2)) * (n,GV_distance) / binomialCoefficients(k,e) * binomialCoefficients(n-k,GV_distance-e);
+    return (n*log(n)/log(2)) * (n,GV_distance) / binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
 
 }
 

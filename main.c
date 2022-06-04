@@ -56,12 +56,12 @@ int main(){
     putElement(&err,0,0,1);
     putElement(&err,0,3,1);*/
 
-    precomputeBinomialCoefficients(info->n,(info->n)/2);
+    precomputeBinCoefficients(info->n,(info->n)/2);
 
     int e=3,y=5;
     BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
 
-    /*printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
+    printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
     printf("Dist(original codeword,received codeword): %d\n\n",HammingDistance(*receivedCodeword,*codeword) );
 
     printf("Supercode Decoding guess: ");
@@ -74,13 +74,13 @@ int main(){
     printMatrix(*receivedCodeword);
 
     printf("Syndrome of original codeword ");
-    printMatrix(*product(*H,*transpose(*codeword) ) );
+    printMatrix(*product(*codeword, *H_t) );
 
     printf("Syndrome of decoded codeword ");
-    printMatrix(*product(*H,*transpose(*decoded) ) );
+    printMatrix(*product(*decoded,*H_t) );
 
     printf("Syndrome of received codeword ");
-    printMatrix(*product(*H,*transpose(*receivedCodeword) ) );*/
+    printMatrix(*product(*receivedCodeword, *H_t) );
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
 
