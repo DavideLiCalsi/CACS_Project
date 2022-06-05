@@ -154,7 +154,7 @@ int compareVectors(BinMatrix v1, BinMatrix v2){
         return MATRIX_INVALID_ELEMENT;
     }
 
-    int ulong_needed = 1 + v1.cols / (8*sizeof(unsigned long));
+    int ulong_needed = ceil( v1.cols*1.0 / (8*sizeof(unsigned long)) );
     int excess = v1.cols % (8*sizeof(unsigned long));
     unsigned long w1,w2;
 
@@ -201,7 +201,7 @@ bool compareMatrices(BinMatrix m1, BinMatrix m2){
     if (m1.cols!=m2.cols || m1.rows != m2.rows)
         return false;
 
-    int needed_ulongs = 1 + (m1.rows * m1.cols) / (8*sizeof(unsigned long));
+    int needed_ulongs = ceil( (m1.rows * m1.cols*1.0) / (8*sizeof(unsigned long)) );
 
     for (int i=0; i<needed_ulongs;++i){
         if (m1.data[i] != m2.data[i])
@@ -236,7 +236,7 @@ BinMatrix* getRow(BinMatrix m, int i){
 
     for(int j=0; j<m.cols;++j){
         unsigned long new = (unsigned long) getElement(m,i,j);
-        int array_offset = ceil( j / (8*sizeof(unsigned long) ) );
+        int array_offset = ceil( j*1.0 / (8*sizeof(unsigned long) ) );
         int bin_offset = j % (8*sizeof(unsigned long) );
         row->data[array_offset] |= new << (63-bin_offset);
     }
@@ -268,7 +268,7 @@ BinMatrix* getColumn(BinMatrix m, int j){
 
     for(int i=0; i<m.rows;++i){
         unsigned long new = (unsigned long) getElement(m,i,j);
-        int array_offset = ceil( i / (8*sizeof(unsigned long) ) );
+        int array_offset = ceil( i*1.0 / (8*sizeof(unsigned long) ) );
         int bin_offset = i % (8*sizeof(unsigned long) );
         col->data[array_offset] |= new << (63- bin_offset);
     }
@@ -311,7 +311,7 @@ BinMatrix* transpose(BinMatrix m){
 BinMatrix* buildMatrix(int* array, int rows, int cols){
 
     BinMatrix* m = (BinMatrix*)(malloc(sizeof(BinMatrix)));
-    unsigned long ulong_needed = 1 + rows*cols/ (8*sizeof(unsigned long));
+    unsigned long ulong_needed = ceil ( rows*cols*1.0/ (8*sizeof(unsigned long)) );
     m->rows=rows;
     m->cols=cols;
     m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);
@@ -348,7 +348,7 @@ BinMatrix* copyMatrix(BinMatrix *matrix){
     int cols = matrix->cols;
 
     BinMatrix* m = (BinMatrix*)(malloc(sizeof(BinMatrix)));
-    unsigned long ulong_needed = 1 + matrix->rows*cols/ (8*sizeof(unsigned long));
+    unsigned long ulong_needed = ceil( matrix->rows*cols*1.0/ (8*sizeof(unsigned long)) );
     m->rows=rows;
     m->cols=cols;
     m->data=(unsigned long*) malloc(sizeof(unsigned long)*ulong_needed);

@@ -53,7 +53,18 @@ void VectorList_addHead(BinMatrix* m, VectorList* p){
 }
 
 /**
- * @brief Destroys a vector list
+ * @brief Destroy the node of a VectorList
+ * 
+ * @param l Pointer to the node to destroy
+ */
+void VectorList_nodeDestroy(VectorList v){
+
+    destroyMatrix(v->v);
+    free(v);
+}
+
+/**
+ * @brief Destroys a whole vector list
  * 
  * @param l Pointer to the list to destroy
  */

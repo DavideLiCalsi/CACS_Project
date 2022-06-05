@@ -84,12 +84,19 @@ void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
             // If it appeared in more than l lists, add it to KGamma
             if (counter>=l)
                 VectorList_addHead(vector->v,KGamma);
+
+            /* 
+                Free only the node of the vector list, but do not destroy
+                the BinMatrix in it because you might need it later
+            */
+            free(vector);
         }
         /*puts("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         VectorList_print(*KGamma);
         puts("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");*/
     }
 
+    //VectorList_destroy(&examined);
 }
 
 /**
@@ -182,8 +189,12 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         BinMatrix* zero = zeroVector(gamma_len);
         //printMatrix(*syndrome);
 
-        if (compareVectors(*syndrome,*zero)!=0)
+        if (compareVectors(*syndrome,*zero)!=0){
+            destroyMatrix(syndrome);
+            destroyMatrix(zero);
+            destroyMatrix(full_vector);
             continue;
+        } 
 
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
@@ -200,9 +211,16 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             *guess_dist=new_dist;
             destroyMatrix(old);
         }
+        else
+            destroyMatrix(full_vector);
+        
+        destroyMatrix(syndrome);
+        destroyMatrix(zero);
     }
     
-
+    destroyMatrix(H_t);
+    destroyMatrix(final);
+    destroyMatrix(curr_trial);
 
 }
 
@@ -405,6 +423,8 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
             temp=temp->next;
         }
+
+        free(K);
 
     }
 

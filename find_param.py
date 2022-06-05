@@ -1,4 +1,4 @@
-from sympy import symbols, log
+from sympy import *
 from math import ceil, floor
 
 def H_2(x):
@@ -66,10 +66,10 @@ def search_parameters(n,k,d):
                 if delta_0-alpha<(1-R -(b-1)*v) and alpha < min(delta_0,R) and alpha > max(0,delta_0+R-1):
                     print("Trying y:",y,"e1:",e1,"b:",b, end=" Complexity: ")
                     new_complexity=complexity(R,delta_0,alpha,b,v)
-                    print(new_complexity)
+                    print(N(new_complexity))
 
                     if best_complexity==-1 or new_complexity < best_complexity:
-                        best_complexity=new_complexity
+                        best_complexity=N(new_complexity)
                         best_param['b']=b
                         best_param['e1']=e1
                         best_param['y']=y
@@ -79,12 +79,12 @@ def search_parameters(n,k,d):
     best_v=best_param['y']/n
     print("e2",compute_e2(delta_0,best_alpha,b,best_v,best_param['y']))
 
-n=30
+n=500
 k=n//2
 R=k/n
-
+print("CODE RATE",R)
 if R == 0.5:
-    delta_0 = 0.11002786443835955
+    delta_0 =n* 0.11002786443835955
 else:
     raise Error
 
