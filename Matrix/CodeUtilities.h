@@ -1,3 +1,7 @@
+#ifndef CODE_UTILITIES_HEADER
+#define CODE_UTILITIES_HEADER
+
+
 #include "Matrix.h"
 
 /**
@@ -42,3 +46,4 @@ Matrix* computeParityCheck(Matrix A, int identity_size){
     return(concat(*A_t,*I_k,0));
 }
 
+#endif

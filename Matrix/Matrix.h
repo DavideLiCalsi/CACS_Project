@@ -1,3 +1,7 @@
+#ifndef MATRIX_HEADER
+#define MATRIX_HEADER
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -333,3 +337,5 @@ Matrix* concat(Matrix m1, Matrix m2, int axis){
         break;
     }
 }
+
+#endif

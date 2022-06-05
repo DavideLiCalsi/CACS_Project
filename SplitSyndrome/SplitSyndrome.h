@@ -90,7 +90,7 @@ void precomputeBinCoefficients(unsigned int n, unsigned int w){
  * 
  * @param n The vectors length to be considered
  * @param t The maximum number of errors
- * @param threshold The maximum difference between the sizes
+ * @param threshold The maximum difference between the sizes (ratio big_table over small_table)
  * @param E Pointer to the list the found entries
  */
 void findEqualSize_u_m(int n, int t, float threshold, PairSet* E){
@@ -108,7 +108,7 @@ void findEqualSize_u_m(int n, int t, float threshold, PairSet* E){
             size_l=binCoefficients[m][u];
             size_r=binCoefficients[n-m][t-u];
 
-            float ratio = size_r >= size_l ? size_r *1.0 / size_l : size_l*1.0/size_r;
+            float ratio = size_r >= size_l ? size_r *1.0/size_l : size_l*1.0/size_r;
             if ( ratio < threshold ){
                 //printf("Found pair: u=%d, m=%d\nSize(Xl)=%d\nSize(Xl)=%d\n",u,m,size_l,size_r);
                 PairSet_addHead(u,m,E);
@@ -136,7 +136,6 @@ bool updateIndexes(int* indexes, int* moduli, int u){
     }
 
     int count;
-    //puts("After");
     for (i=0; i<u; ++i){
 
         if (indexes[i]!=0 && indexes[i+1]==0 && !clean && i!=u-1  ){
@@ -160,7 +159,7 @@ bool updateIndexes(int* indexes, int* moduli, int u){
 }
 
 /**
- * @brief Enumerates all the m-vectors of length u
+ * @brief Enumerates all the m-vectors with a number of 1s equals to u
  * 
  * @param m 
  * @param u 
@@ -173,7 +172,7 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
 
     int i,j,count=0;
 
-    // Case when u=0 or u=m, only one vecto ris considered
+    // Case when u=0 or u=m, only one vector is considered
     if (u==0 || u==m){
         int elem_to_set = (u==0? 0:1);
         for(i=0;i<m;++i){
@@ -182,7 +181,6 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         BinMatrix* e = buildMatrix(array,1,m);
         BinMatrix* s = product(*e,H_l_r);
         addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
-        //printf("Tested 1 vector\n");
         free(indexes);
         free(moduli);
         free(array);
@@ -198,7 +196,7 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
     {
         for (i=0,j=0;i<m;++i){
             
-            if (i==indexes[j]){
+            if (j < u && i==indexes[j]){
                 array[i]=1;
                 j++;
             }
@@ -212,6 +210,7 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
         count++;
     }while (updateIndexes(indexes,moduli,u));
+    
 
     //printf("Tested %d vectors\n",count);
     free(indexes);
@@ -243,8 +242,7 @@ int intToBinVector(int x, int* v, int len){
 }
 
 /**
- * @brief Obtains the left syndrome from the right syndrome
- * and the full syndrome
+ * @brief Obtains the left syndrome from the right syndrome and the full syndrome
  * 
  * @param s 
  * @param sr 
@@ -282,9 +280,20 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, VectorList* el, VectorList* er){
     node = searchNode((void*)left_syndrome,Xl,BST_COMPARISON_BINMATRIX);
 
     if (node != NULL){
+
+        VectorList temp = (VectorList)Xr->data;
+        while(temp!=NULL)
+           VectorList_addHead(vectorList_pop(&temp)->v, er);
+        
+        temp = (VectorList)node->data;
+        while(temp!=NULL)
+           VectorList_addHead(vectorList_pop(&temp)->v, el);
+
+        /*
         *er = (VectorList) Xr->data;
         *el = (VectorList) node->data;
         //printf("FOUND!\n");
+        */
         return true;
     }
     else{
@@ -392,20 +401,20 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     int t,u,m;
     BST Xl=NULL;
     BST Xr=NULL;
-    VectorList el;
-    VectorList er;
-    PairSet tables[d];
+    /*VectorList el;
+    VectorList er;*/
+    PairSet* tables=malloc(sizeof(PairSet)*(d+1));
 
     // First do the precomputation step
     //printf("Starting the precomputation stage\n");
 
-    // Compute some bin coefficients
-    precomputeBinCoefficients(100,100);
+    // Compute some bin coefficients (already computed in main)
+    // precomputeBinCoefficients(100,100);
 
     // Build the tables E(1),...,E(d)
     for (t=1; t<=d;++t){
         tables[t]=NULL;
-        findEqualSize_u_m(2*s.cols,t,1.25,&tables[t]);
+        findEqualSize_u_m(2*s.cols,t,3,&tables[t]);
         //printf("Found E(%d)\n",t);
     }
 
@@ -424,23 +433,31 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
             u=pair->x;
             m=pair->y;
 
+            PairSet_destroy(pair);
+
             //printf("Trying the values u=%d,m=%d,t=%d\n",u,m,t);
             // Build the two tables
             //printf("Building the table X_left...");
             buildLeftTable(m,u,H,&Xl);
             //printf("DONE!\nBuilding the table X_right...");
             buildRightTable(m,t-u,2*s.cols,H,&Xr);
+            
             //printf("DONE!\n");
 
-            if ( inspectTables(Xr,Xl,s,&el,&er) ){
+            if ( inspectTables(Xr,Xl,s,left,right) ){
+                
+                /* do nothing */;
 
                 // If you found the two errors, build the full error and return it
                 //printf("Found code!\n");
                 //VectorList_print(el);
                 //VectorList_print(er);
+                
+                /*
                 *left=el;
                 *right=er;
                 return;
+                */
             }
 
             destroyTree(&Xl,BST_COMPARISON_BINMATRIX);
@@ -450,6 +467,8 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
         }
         
     }
+
+    free(tables);
 }
 
 #endif

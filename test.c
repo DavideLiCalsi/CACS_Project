@@ -7,9 +7,6 @@
 #include "Utilities/dataReader.h"
 
 
-#define length 4
-
-
 int main(){
     
     /*BinMatrix* G;
@@ -89,11 +86,16 @@ int main(){
 
 
     // READ FROM FILE
-    char path[100] = "./Utilities/info.txt";
+    /*char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
     printMatrix(*info->H_t);
     printMatrix(*info->s);
-    destroyInfo(info);
+    destroyInfo(info);*/
+
+
+    precomputeBinomialCoefficients(100, 100);
+    int distance = gilbertVashamovDistance(100, 50, 2);
+    printf("\n%d", distance);
     
 
     return 0;
