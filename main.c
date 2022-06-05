@@ -18,6 +18,7 @@ int main(){
     BinMatrix* H = concat(*I,*A,0);
     BinMatrix* H_t = transpose(*H);
     BinMatrix* G = concat(*info->H_t,*I,0);
+    
 
     //printMatrix(*H);
 
@@ -25,7 +26,6 @@ int main(){
     destroyMatrix(I);
 
     BinMatrix *codeword = generateCodeword(G, seed);
-    //printMatrix(*codeword);
     BinMatrix *error = generateError(info->n, info->w, seed);
     //printMatrix(*error);
     BinMatrix *receivedCodeword = vectorSum(*codeword, *error);

@@ -230,13 +230,13 @@ BinMatrix* getRow(BinMatrix m, int i){
     row->rows=1;
     row->cols=m.cols;
 
-    int needed_u_long = ceil ( (row->rows*row->cols)*1.0 / (8*sizeof(unsigned long)) );
+    int needed_u_long = ceil ( row->rows*row->cols*1.0 / (8*sizeof(unsigned long)) );
     row->data= (unsigned long*) malloc(sizeof(unsigned long) * needed_u_long);
     memset(row->data,0,sizeof(unsigned long) * needed_u_long);
 
     for(int j=0; j<m.cols;++j){
         unsigned long new = (unsigned long) getElement(m,i,j);
-        int array_offset = ceil( j*1.0 / (8*sizeof(unsigned long) ) );
+        int array_offset = j / (8*sizeof(unsigned long) );
         int bin_offset = j % (8*sizeof(unsigned long) );
         row->data[array_offset] |= new << (63-bin_offset);
     }
@@ -268,7 +268,7 @@ BinMatrix* getColumn(BinMatrix m, int j){
 
     for(int i=0; i<m.rows;++i){
         unsigned long new = (unsigned long) getElement(m,i,j);
-        int array_offset = ceil( i*1.0 / (8*sizeof(unsigned long) ) );
+        int array_offset = i/ (8*sizeof(unsigned long) );
         int bin_offset = i % (8*sizeof(unsigned long) );
         col->data[array_offset] |= new << (63- bin_offset);
     }

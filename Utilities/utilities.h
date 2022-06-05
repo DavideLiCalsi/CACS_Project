@@ -164,10 +164,12 @@ BinMatrix* generateCodeword(BinMatrix *G, int seed){
     
     // generate the codeword
     BinMatrix *codeword = getRow(*G, G_rows_index->data[0]);
+    
     BinMatrix *tmp, *tmp2;
     for (int i=1; i<num_G_rows; i++){
         tmp=codeword;
         tmp2 = getRow(*G, G_rows_index->data[i]);
+        printMatrix(*tmp2);
         codeword = vectorSum(*tmp, *tmp2);
         destroyMatrix(tmp); destroyMatrix(tmp2);
     }
