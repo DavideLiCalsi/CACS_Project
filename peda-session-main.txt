@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-break SupercodeDecoding
-break /home/davidelicalsi/CACS/CACS_Project/Supercode/Supercode.h:299
-break printf
-=======
-break SplitSyndrome/SplitSyndrome.h:334
->>>>>>> Davide_develop
+break /home/davidelicalsi/CACS/CACS_Project/main.c:24
+break generateCodeword
 

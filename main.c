@@ -8,7 +8,7 @@
 int main(){
 
     srand(time(NULL));
-    int seed = rand();   // fixed for repeatability
+    int seed = 24;   // fixed for repeatability
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
@@ -20,7 +20,7 @@ int main(){
     BinMatrix* G = concat(*info->H_t,*I,0);
 
     //printMatrix(*H);
-
+    printMatrix(*G);
     destroyMatrix(A);
     destroyMatrix(I);
 
@@ -50,27 +50,15 @@ int main(){
     printMatrix(*product(*con, *H_t));
     scanf("%d", &seed);*/
 
-<<<<<<< HEAD
-    //codeword originale: 0 1 1 0 1 0 0 0 1 1 1 1 1 1 0 1 1 0 1 1
-
-
-    int b_vect[20]={ 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
-    BinMatrix* b= buildMatrix(b_vect,20,1);
-=======
     //int b_vect[20]={ 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
     //BinMatrix* b= buildMatrix(b_vect,20,1);
->>>>>>> Davide_develop
     /*BinMatrix err=*transpose(*zeroVector(info->n));
     putElement(&err,0,0,1);
     putElement(&err,0,3,1);*/
 
-<<<<<<< HEAD
-    int e=4,y=4;
-    SupercodeDecoding(*H,*b,info->n,(info->n)/2 ,e,y,info->w);
-=======
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=3,y=5;
+    int e=4,y=4;
     BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
 
     printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
@@ -107,7 +95,6 @@ int main(){
     destroyMatrix(decoded);
     VectorList_destroy(&l);
     VectorList_destroy(&r);
->>>>>>> Davide_develop
     
     return 0;
 }

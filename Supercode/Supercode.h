@@ -431,7 +431,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
             temp=temp->next;
         }
-
+        
         free(K);
 
     }
