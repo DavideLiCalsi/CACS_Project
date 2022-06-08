@@ -1,7 +1,15 @@
-#include "../SplitSyndrome/SplitSyndrome.h"
+#include "../SplitSyndrome/SupercodeSplitSyndrome.h"
 #include "../Utilities/randomSelector.h"
 #include "../Utilities/utilities.h"
 #include <stdbool.h>
+
+int compute_e2(int n, int k, int y, int e1, int b, double delta_0){
+
+    double alpha = e1*1.0/n;
+    double v=y*1.0/n;
+    double R=k*1.0/n;
+    return ceil( (delta_0-alpha)/(1-R-(b-1)*v) );
+}
 
 
 /**
@@ -120,6 +128,7 @@ void incrementVector(BinMatrix* v){
 
 }
 
+
 /**
  * @brief Loops over all the vectors c' whose projection
  * on gamma equals m
@@ -136,6 +145,19 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
     int gamma_len=gamma->length;
     int n=b.cols;
     BinMatrix *H_t = transpose(H);
+    BinMatrix* H_t_gamma= sampleFromMatrix(gamma->data,n/2,*H_t,MATRIX_SAMPLE_ROWS);
+
+    int* complement_indexes=malloc(sizeof(int)*n/2);
+
+    for (int i=0; i<n/2;++i ){
+        int j=gamma->data[i];
+        complement_indexes[i]=j;
+    }
+    BinMatrix* H_t_complement =sampleFromMatrix(complement_indexes,n/2,*H_t,MATRIX_SAMPLE_ROWS);
+    free(complement_indexes);
+    
+    /*Compute the syndrome of vector m w.r.t. gamma*/
+    BinMatrix* m_syndrome_gamma=product(m,*H_t_gamma);
 
     // quicksort(indexes,0,gamma_len-1); likely to be useless (indeces already sorted)
 
@@ -151,13 +173,22 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
     int i;
     int gamma_index, curr_trial_index;
     // TODO: add check that the generated vector is a valid codeword
+    
+
     while (compareVectors(*curr_trial,*final)!=0)
     {   
+
+        
         // Initialize the full vector to all zeros
         full_vector=zeroVector(n);
 
         /*Code that updates curr_trial*/
         incrementVector(curr_trial);
+
+        BinMatrix* compl_syndrome=product(*curr_trial,*H_t_complement);
+
+        if (compareVectors(*compl_syndrome,*m_syndrome_gamma)!=0)
+            continue;
 
         // Merge m and curr_trial into full_vector
         gamma_index=0;
@@ -185,7 +216,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             }
         }
 
-        BinMatrix* syndrome = product(*full_vector, *H_t);
+        /*BinMatrix* syndrome = product(*full_vector, *H_t);
         BinMatrix* zero = zeroVector(gamma_len);
         //printMatrix(*syndrome);
 
@@ -194,7 +225,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             destroyMatrix(zero);
             destroyMatrix(full_vector);
             continue;
-        } 
+        }*/
 
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
@@ -213,9 +244,6 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         }
         else
             destroyMatrix(full_vector);
-        
-        destroyMatrix(syndrome);
-        destroyMatrix(zero);
     }
     
     destroyMatrix(H_t);
@@ -264,7 +292,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
     
 }
 
-BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int e, int y, int d){
+BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k, int e, int y, int b_param, int d){
 
     BinMatrix *H_t = transpose(H);
 
@@ -273,6 +301,8 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
     // The best distance so far
     int best_dist=HammingDistance(b,*decoded);
+
+    int e2=compute_e2(n,k,y,e,b_param,0.11002786443835955);
 
     printf("--------------------------\n"
            "Best distance starts at %d\n",best_dist);
@@ -377,7 +407,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             printMatrix(*s_i);
             printf("and H_i\n");
             printMatrix(*H_i);
-            SplitSyndrome(*H_i,*s_i,3, &u_1,&u_2);
+            SplitSyndrome(*H_i,*s_i,3, &u_1,&u_2,e,e2);
 
             /*puts("INIT---U_1");
             VectorList_print(u_1);
@@ -397,7 +427,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         // The list of vectors KGamma
         VectorList KGamma=NULL;
         printf("Building K(gamma), containing %d lists\n",s);
-        buildKGamma(K,s,1,&KGamma);
+        buildKGamma(K,s,b_param,&KGamma);
         //printf("Gamma successfully built\n");
 
         puts("SOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOS");

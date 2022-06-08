@@ -1,6 +1,6 @@
 //#include "Matrix.h"
 #include "Matrix/BinaryMatrix.h"
-#include "SplitSyndrome/SplitSyndrome.h"
+#include "SplitSyndrome/SupercodeSplitSyndrome.h"
 #include "Utilities/dataReader.h"
 #include "Utilities/utilities.h"
 #include "Supercode/Supercode.h"
@@ -18,6 +18,7 @@ int main(){
     BinMatrix* H = concat(*I,*A,0);
     BinMatrix* H_t = transpose(*H);
     BinMatrix* G = concat(*info->H_t,*I,0);
+    
 
     //printMatrix(*H);
     printMatrix(*G);
@@ -25,7 +26,6 @@ int main(){
     destroyMatrix(I);
 
     BinMatrix *codeword = generateCodeword(G, seed);
-    //printMatrix(*codeword);
     BinMatrix *error = generateError(info->n, info->w, seed);
     //printMatrix(*error);
     BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
@@ -37,7 +37,7 @@ int main(){
     VectorList l = NULL;
     VectorList r = NULL;
 
-    SplitSyndrome(*H,*syndrome,info->w,&l,&r);
+    //SplitSyndrome(*H,*syndrome,info->w,&l,&r);
 
     /*puts("INIT---l");
     VectorList_print(l);
@@ -58,8 +58,8 @@ int main(){
 
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=4,y=4;
-    BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,info->w);
+    int e=3,y=4,b=2;
+    BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,b,info->w);
 
     printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
     printf("Dist(original codeword,received codeword): %d\n\n",HammingDistance(*receivedCodeword,*codeword) );
