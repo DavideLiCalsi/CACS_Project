@@ -17,6 +17,10 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int 
         BinMatrix *error = generateError(info->n, info->w, seed);
         BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
 
+        printf("Error weight: %d\n",HammingWeight(*error));
+        puts("Original code");
+        printMatrix(*codeword);
+
         BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,b,info->w);
 
         BinMatrix* syn=product(*decoded,*transpose(*H));
@@ -31,10 +35,13 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int 
         else
             if (HammingDistance(*decoded,*receivedCodeword)<=HammingDistance(*receivedCodeword,*codeword)){
                 acceptable++;
-                printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*decoded,*codeword));
+                printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*receivedCodeword,*codeword));
             }
-            else
+            else{
+                printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*receivedCodeword,*codeword));
                 failed++;
+            }
+                
     }
 
     printf("Successful decodings: %d/%d\n",success,iterations);
@@ -97,7 +104,7 @@ int main(){
 
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=3,y=5,b=1;
+    int e=1,y=1,b=21;
     run_test(info,G,H,e,y,b,1);
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));

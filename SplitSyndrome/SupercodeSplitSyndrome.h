@@ -5,9 +5,10 @@
 #include "PairSet.h"
 #include <math.h>
 #include <time.h>
+#include "../Utilities/debug.h"
 
-unsigned int binCoefficients[100][100];
-int valid[100][100];
+unsigned int binCoefficients[200][200];
+int valid[200][200];
 
 /**
  * @brief compute the (n,k) binomial coefficient
@@ -207,6 +208,7 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
 
         BinMatrix* e = buildMatrix(array,1,m);
         BinMatrix* s = product(*e,H_l_r);
+        PRINTMATRIX_PTR(e);
         addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
         count++;
     }while (updateIndexes(indexes,moduli,u));
@@ -405,14 +407,14 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
  * @param s 
  * @param d 
  */
-void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList* right, int e1, int e2){
+void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList* right, int e1, int e2,int k, int y){
 
     int t,u,m;
     BST Xl=NULL;
     BST Xr=NULL;
     /*VectorList el;
     VectorList er;*/
-    PairSet* tables=malloc(sizeof(PairSet)*(d+1));
+    //PairSet* tables=malloc(sizeof(PairSet)*(d+1));
 
     // First do the precomputation step
     //printf("Starting the precomputation stage\n");
@@ -421,35 +423,35 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     // precomputeBinCoefficients(100,100);
 
     // Build the tables E(1),...,E(d)
-    for (t=1; t<=d;++t){
+    /*for (t=1; t<=d;++t){
         tables[t]=NULL;
         findEqualSize_u_m(2*s.cols,t,3,&tables[t]);
         //printf("Found E(%d)\n",t);
-    }
+    }*/
 
     //printf("Precomputation stage complete!\n");
 
-    
-    for (t=1; t<=d;++t){
+    for (t=0; t<=d;++t){
 
-        PairSet E = tables[t];
+        //PairSet E = tables[t];
         //printf("Trying t=%d\n",t);
 
-        while (E != NULL)
+        int i=0;
+        while (i<=k && i<=t && t-i<=y)
         {   
             // Get a (u,m) pair from E(t)
-            Pair* pair=PairSet_pop(&E);
-            u=pair->x;
-            m=pair->y;
+            //Pair* pair=PairSet_pop(&E);
+            u=i;//pair->x;
+            m=k;//pair->y;
 
-            PairSet_destroy(pair);
+            //PairSet_destroy(pair);
 
             //printf("Trying the values u=%d,m=%d,t=%d\n",u,m,t);
             // Build the two tables
             //printf("Building the table X_left...");
             buildLeftTable(m,u,H,&Xl);
             //printf("DONE!\nBuilding the table X_right...");
-            buildRightTable(m,t-u,2*s.cols,H,&Xr);
+            buildRightTable(m,t-u,y+k,H,&Xr);
             
             //printf("DONE!\n");
 
@@ -458,10 +460,10 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
                 /* do nothing */;
 
                 // If you found the two errors, build the full error and return it
-                //printf("Found code!\n");
-                //VectorList_print(el);
+                PRINTF("Found code!\n");
+                PRINTVLIST(*left);
                 //VectorList_print(er);
-                
+                //return;
                 /*
                 *left=el;
                 *right=er;
@@ -473,11 +475,12 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
             destroyTree(&Xr,BST_COMPARISON_BINMATRIX);
             Xl=NULL;
             Xr=NULL;
+
+            ++i;
         }
-        
     }
 
-    free(tables);
+    //free(tables);
 }
 
 #endif

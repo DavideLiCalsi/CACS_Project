@@ -307,12 +307,13 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
 
-        printMatrix(*full_vector);
+        PRINTMATRIX(*full_vector);
 
         // If you improved the distance, update your guess
         if (new_dist<*guess_dist){
-            printf("Improved: new dist %d\nnew_vector: ",new_dist);
+            printf("\nImproved: new distance %d\nnew_vector: ",new_dist);
             printMatrix(*full_vector);
+            printf("\n");
             BinMatrix* old=*guess;
             *guess=full_vector;
             *guess_dist=new_dist;
@@ -385,6 +386,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     int best_dist=HammingDistance(b,*decoded);
 
     int e2=compute_e2(n,k,y,e,b_param,DELTA_0);
+    int tot_iterations=computeLn(n,k,e);
 
     printf("--------------------------\n"
            "Best distance starts at %d\n",best_dist);
@@ -392,7 +394,8 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     printf("\t-y:%d\n",y);
     printf("\t-e1:%d\n",e);
     printf("\t-e2:%d\n",e2);
-    printf("\t-b:%d\n",b);
+    printf("\t-b:%d\n",b_param);
+    printf("Total iterations:%d\n",tot_iterations);
 
     // Compute the syndrome
     BinMatrix* synd = product(b,*H_t);
@@ -411,7 +414,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     Set* gamma=NULL;
 
     // Iterate Ln(k,e) times
-    for (i=0;i<computeLn(n,k,e);++i){
+    for (i=0;i<tot_iterations;++i){
         
         PRINTF("--------------------------\nITERATION: %d\n", i);
         // generate the information set
@@ -445,19 +448,11 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
                 }
             }
         }
-        //printf("Generated complementary subset of gamma:   {");
-        /*for (int j=0; j<n-k-1; j++)
-            printf("%d, ", compl_gamma_indexes[j]);
-        printf("%d}\n", compl_gamma_indexes[n-k-1]);*/
+
 
         BinMatrix* I_n_k=identityMatrix(n-k);
         BinMatrix* A = sampleFromMatrix(gamma_indexes,n-k,H,MATRIX_SAMPLE_COLUMNS);
-        //BinMatrix* A_compl = sampleFromMatrix(compl_gamma_indexes,n-k,H,MATRIX_SAMPLE_COLUMNS);
         BinMatrix* H_prime = concat(*A,*I_n_k,0);
-        //H_prime = concat(*A, *A_compl, 0);
-
-        //printf("Found H'\n");
-        //printMatrix(*H_prime);
 
         int s = ceil( (n-k)*1.0/y );
         int* indexes = (int*) malloc(sizeof(int)*y);
@@ -468,9 +463,9 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         // Iterate s times
         for (int j=0;j<s;++j){
 
-            PRINTF("\nITERATION %d/%d\n",j+1,s);
+            PRINTF("\nMICRO-ITERATION %d/%d\n",j+1,s);
 
-            // We are splitting for the last time
+            // Corrections needed to check if we are splitting for the last time
             bool cond = j==s-1 && (n-k)%y != 0;
             int samplingLen = cond ? (n-k)%y : y;
 
@@ -483,23 +478,18 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             // Build Hi = [Ai|Iy]
             BinMatrix* A_i = sampleFromMatrix(indexes, samplingLen,*A,MATRIX_SAMPLE_ROWS);
             BinMatrix* H_i=concat(*A_i,*Iy,0);
+            PRINTMATRIX_PTR(H_i);
             destroyMatrix(A_i);
             destroyMatrix(Iy);
 
             // Build s_i
             BinMatrix* s_i = sampleFromMatrix(indexes,samplingLen,*synd,MATRIX_SAMPLE_COLUMNS);
-            //BinMatrix* s_i_transp = sampleFromMatrix(indexes,y,*synd,MATRIX_SAMPLE_COLUMNS);
-            //BinMatrix* s_i = transpose(*s_i_transp);
-            //destroyMatrix(s_i_transp);
 
             VectorList u_1=NULL;
             VectorList u_2=NULL;
 
-            /*printf("Applying SplitSyndrome on s_i:\n");
-            printMatrix(*s_i);
-            printf("and H_i\n");
-            printMatrix(*H_i);*/
-            SplitSyndrome(*H_i,*s_i,3, &u_1,&u_2,e,e2);
+            PRINTF("length of H_i: %d\n",H_i->cols);
+            SplitSyndrome(*H_i,*s_i,e+e2, &u_1,&u_2,e,e2,k,samplingLen);
             
             K[j]=u_1;
 
@@ -507,17 +497,17 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
         // The list of vectors KGamma
         VectorList KGamma=NULL;
-        PRINTF("Building K(gamma), containing %d lists\n",s);
+        PRINTF("Building K(gamma), processind s=%d lists\n",s);
 
         begin=clock();
         buildKGamma(K,s,b_param,&KGamma);
         end=clock();
 
-        //printf("Bulding K(gamma): %ld\n",end-begin);
+        PRINTF("K(gamma) built in %ld ticks\n",end-begin);
 
         //VectorList_print(KGamma);
         if (KGamma == NULL)
-            ;//printf("WARNING: null K(gamma) iteration %d\n", i);
+            PRINTF("WARNING: null K(gamma) iteration %d\n", i);
 
 
         // Inspect the list KGamma
@@ -526,19 +516,16 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         while (temp != NULL)
         {
             BinMatrix* ul = temp->v;
-            BinMatrix* ur=zeroVector(gamma->length-ul->cols);
-            BinMatrix* u_full=concat(*ul,*ur,0);
+            
             BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
-            //BinMatrix* b_Gamma_t=transpose(*b_Gamma);
-            //printMatrix(*b_Gamma);
-            BinMatrix* m = vectorSum(*b_Gamma,*u_full);
+            BinMatrix* m = vectorSum(*b_Gamma,*ul);
 
             // Iterate over the vectors c' whose projection on Gamma equals m
 
             begin=clock();
             loopOverProjectionOnGamma(gamma,*m,H,b,&decoded,&best_dist);
             end=clock();
-            PRINTF("Looping over Projection on KGamma: %ld\n",end-begin);
+            PRINTF("Looping over Projection on KGamma took %ld ticks\n",end-begin);
 
             // Cleaning
             destroyMatrix(ul);
@@ -551,12 +538,6 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         free(K);
 
     }
-
-    /*printf("FINAL GUESS: ");
-    printMatrix(*decoded);
-    printMatrix(b);*/
-    //BinMatrix *pr = product(*decoded,*H_t);
-    //printMatrix(*pr);
 
     return decoded;
 

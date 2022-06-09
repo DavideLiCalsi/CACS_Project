@@ -43,7 +43,7 @@ int gilbertVashamovDistance(int n, int k, int q){
 int computeLn(int n, int k, int e){
 
     int GV_distance = gilbertVashamovDistance(n, k, 2);
-    return (n*log(n)/log(2)) * (n,GV_distance) / binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
+    return (n*log(n)/log(2)) * (n,GV_distance) /  binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
 
 }
 
@@ -169,7 +169,6 @@ BinMatrix* generateCodeword(BinMatrix *G, int seed){
     for (int i=1; i<num_G_rows; i++){
         tmp=codeword;
         tmp2 = getRow(*G, G_rows_index->data[i]);
-        printMatrix(*tmp2);
         codeword = vectorSum(*tmp, *tmp2);
         destroyMatrix(tmp); destroyMatrix(tmp2);
     }
