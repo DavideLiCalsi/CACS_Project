@@ -561,7 +561,7 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
 }
 
 /**
- * @brief Computes the inner productof the two vectors
+ * @brief Computes the inner (scalar) product of the two vectors
  *
  */
 char vectorProduct(BinMatrix v1, BinMatrix v2){

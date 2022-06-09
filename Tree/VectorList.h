@@ -121,7 +121,7 @@ VectorList vectorList_pop(VectorList* p){
 VectorList vectorList_get(VectorList* p, int index){
 
     if (*p == NULL){
-        printf("The list is empty!\n");
+        //printf("The list is empty!\n");
         return NULL;
     }
 
@@ -143,7 +143,14 @@ VectorList vectorList_get(VectorList* p, int index){
 
 }
 
-
+/**
+ * @brief Searches the binary vector v in a list
+ * 
+ * @param v The vector to search
+ * @param l The list to inspect
+ * @return true Vector found
+ * @return false Not found
+ */
 bool VectorList_search(BinMatrix v, VectorList l){
 
     VectorList temp=l;

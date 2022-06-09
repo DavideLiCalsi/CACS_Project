@@ -5,10 +5,49 @@
 #include "Utilities/utilities.h"
 #include "Supercode/Supercode.h"
 
+double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int iterations){
+
+    int failed=0, success=0, acceptable=0;
+    BinMatrix* zero=zeroVector(info->n/2);
+
+    for (int i=0;i<iterations;++i){
+
+        int seed=rand();
+        BinMatrix *codeword = generateCodeword(G, seed);
+        BinMatrix *error = generateError(info->n, info->w, seed);
+        BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
+
+        BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,b,info->w);
+
+        BinMatrix* syn=product(*decoded,*transpose(*H));
+
+        if ( compareVectors(*syn,*zero) !=0){
+            failed++;
+            continue;
+        }
+
+        if ( compareVectors(*decoded,*codeword) ==0)
+            success++;
+        else
+            if (HammingDistance(*decoded,*receivedCodeword)<=HammingDistance(*receivedCodeword,*codeword)){
+                acceptable++;
+                printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*decoded,*codeword));
+            }
+            else
+                failed++;
+    }
+
+    printf("Successful decodings: %d/%d\n",success,iterations);
+    printf("Acceptable decodings: %d/%d\n",acceptable,iterations);
+    printf("Failed decodings: %d/%d\n",failed,iterations);
+
+    return success*1.0/iterations;
+}
+
 int main(){
 
     srand(time(NULL));
-    int seed = 24;   // fixed for repeatability
+    int seed = rand();   // fixed for repeatability
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
@@ -58,29 +97,8 @@ int main(){
 
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=3,y=4,b=2;
-    BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,b,info->w);
-
-    printf("\nDist(received codeword,guess): %d\n",HammingDistance(*decoded,*receivedCodeword) );
-    printf("Dist(original codeword,received codeword): %d\n\n",HammingDistance(*receivedCodeword,*codeword) );
-
-    printf("Supercode Decoding guess: ");
-    printMatrix(*decoded);
-    printf("Original codeword: ");
-    printMatrix(*codeword);
-    printf("Error: ");
-    printMatrix(*error);
-    printf("Received codeword: ");
-    printMatrix(*receivedCodeword);
-
-    printf("Syndrome of original codeword ");
-    printMatrix(*product(*codeword, *H_t) );
-
-    printf("Syndrome of decoded codeword ");
-    printMatrix(*product(*decoded,*H_t) );
-
-    printf("Syndrome of received codeword ");
-    printMatrix(*product(*receivedCodeword, *H_t) );
+    int e=3,y=5,b=1;
+    run_test(info,G,H,e,y,b,1);
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
 
@@ -92,7 +110,7 @@ int main(){
     destroyMatrix(error);
     destroyMatrix(receivedCodeword);
     destroyMatrix(syndrome);
-    destroyMatrix(decoded);
+    //destroyMatrix(decoded);
     VectorList_destroy(&l);
     VectorList_destroy(&r);
     

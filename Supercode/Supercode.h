@@ -1,8 +1,24 @@
 #include "../SplitSyndrome/SupercodeSplitSyndrome.h"
 #include "../Utilities/randomSelector.h"
 #include "../Utilities/utilities.h"
+#include "../Utilities/debug.h"
 #include <stdbool.h>
 
+#define DELTA_0 0.11002786443835955
+
+clock_t begin,end;
+
+/**
+ * @brief Computes the e2 parameters
+ * 
+ * @param n 
+ * @param k 
+ * @param y 
+ * @param e1 
+ * @param b 
+ * @param delta_0 
+ * @return int 
+ */
 int compute_e2(int n, int k, int y, int e1, int b, double delta_0){
 
     double alpha = e1*1.0/n;
@@ -14,7 +30,9 @@ int compute_e2(int n, int k, int y, int e1, int b, double delta_0){
 
 /**
  * @brief Searches a vector in some lists and counts
- * the occurances of the vector in the lsts.
+ * the occurances of the vector in the lists.
+ * This function is called to build the list K(gamma)
+ * of vectors appearing in at least b lists K_i
  * 
  * @param lists 
  * @param vector
@@ -68,7 +86,7 @@ void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
 
         
         // Retrieve K_i
-        printf("Working on K(%d)\n",i);
+        //printf("Working on K(%d)\n",i);
         VectorList vector;
         int index = 0;
         
@@ -131,7 +149,8 @@ void incrementVector(BinMatrix* v){
 
 /**
  * @brief Loops over all the vectors c' whose projection
- * on gamma equals m
+ * on gamma equals m. If you improved the best Hamming distance
+ * from the codeword to decode, update the distance and the guess
  * 
  * @param gamma The information set
  * @param m The ref vector
@@ -149,88 +168,145 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
 
     int* complement_indexes=malloc(sizeof(int)*n/2);
 
-    for (int i=0; i<n/2;++i ){
-        int j=gamma->data[i];
-        complement_indexes[i]=j;
+    for (int i=0, gamma_index=0, compl_index=0; i<n;++i ){
+        
+        if (i < gamma->data[gamma_index] || gamma_index==n/2 ){
+            complement_indexes[compl_index]=i;
+            compl_index++;
+        }
+        else
+            gamma_index++;
     }
+
+    int effective_dimension=0;
+
+    for(int i=0;i<n/2;++i){
+        if (complement_indexes[i]<n/2)
+            effective_dimension++;
+    }
+    Set* gamma_compl=buildSet(complement_indexes,n/2);
+
     BinMatrix* H_t_complement =sampleFromMatrix(complement_indexes,n/2,*H_t,MATRIX_SAMPLE_ROWS);
-    free(complement_indexes);
+
+    effective_dimension=n/2-effective_dimension;
+
+    int* effective_indexes=(int*) malloc(sizeof(int)*effective_dimension);
+
+    for(int i=0;i<effective_dimension;++i)
+        effective_indexes[i]=n/2-(effective_dimension-i);
+
+    BinMatrix* H_t_complement_eff = sampleFromMatrix(effective_indexes,effective_dimension,*H_t_complement,MATRIX_SAMPLE_ROWS);
     
     /*Compute the syndrome of vector m w.r.t. gamma*/
     BinMatrix* m_syndrome_gamma=product(m,*H_t_gamma);
-
-    // quicksort(indexes,0,gamma_len-1); likely to be useless (indeces already sorted)
 
     BinMatrix* full_vector;
 
     //We will try all possible values for this vector,starting from [0,...,0]
     //Its entries represent the non-fixed entries of the new vector
-    BinMatrix* curr_trial=zeroVector(n-gamma_len);
+    BinMatrix* curr_trial=zeroVector(effective_dimension);
 
     // We will stop when we reach final, i.e. a vector full of ones
-    BinMatrix* final = oneVector(n-gamma_len);
+    BinMatrix* final = oneVector(effective_dimension);
 
     int i;
     int gamma_index, curr_trial_index;
     // TODO: add check that the generated vector is a valid codeword
     
-
+    
     while (compareVectors(*curr_trial,*final)!=0)
     {   
 
-        
         // Initialize the full vector to all zeros
         full_vector=zeroVector(n);
 
-        /*Code that updates curr_trial*/
-        incrementVector(curr_trial);
-
-        BinMatrix* compl_syndrome=product(*curr_trial,*H_t_complement);
-
-        if (compareVectors(*compl_syndrome,*m_syndrome_gamma)!=0)
-            continue;
-
-        // Merge m and curr_trial into full_vector
-        gamma_index=0;
-        curr_trial_index=0;
-        for (i=0;i<n;++i){
-
-            // This position is in gamma
-            if (gamma_index < gamma_len && i==indexes[gamma_index]){
-
-                char entry=getElement(m,0,gamma_index);
-
-                if (entry!=0)
-                    putElement(full_vector,0,i,entry);
-                
+        for(int i=0, gamma_index=0, compl_index=0,effective_index=0;i<n;++i){
+            
+            // The current position is in gamma, copy from m
+            if (gamma->data[gamma_index]==i){
+                putElement(full_vector,0,i,getElement(m,0,gamma_index));
                 gamma_index++;
+                continue;
             }
-            else{ //This position is not in gamma
 
-                char entry=getElement(*curr_trial,0,curr_trial_index);
-
-                if (entry!=0)
-                    putElement(full_vector,0,i,entry);
+            // Curr position not in gamma
+            if (gamma_compl->data[compl_index]==i ){
                 
-                curr_trial_index++;
+                // This position is not multiplied by the identity, copy from the current trial
+                if (i>n/2 ){
+                    //printf("EffIndex %d, I index %d, elem %d\n",effective_index,i,getElement(*curr_trial,0,effective_index));
+                    putElement(full_vector,0,i,getElement(*curr_trial,0,effective_index));
+                    effective_index++;
+                }
+                else{
+                    putElement(full_vector,0,i,0);
+                }
+
+                compl_index++;
             }
         }
 
+        BinMatrix* target_syndrome=product(*full_vector,*H_t);
+
+        bool failed=false;
+
+        for(int i=0, compl_index=0;i<target_syndrome->cols;++i){
+            
+            if ( getElement(*target_syndrome,0,i)==1 ){
+
+                if (  i != complement_indexes[compl_index ] ) {
+                    failed=true;
+                    break;
+                }
+                else{
+                    //printf("Correcting %d\n",i);
+                    char curr_elem = getElement(*full_vector,0,i);
+                    putElement(full_vector,0,i,curr_elem==0?1:0);
+                    ++compl_index;
+                }
+                    
+            }
+            else{
+                if (  i == complement_indexes[compl_index ] ) 
+                    compl_index++; 
+            }
+                
+        }
+        /*printMatrix(*curr_trial);*/
         /*BinMatrix* syndrome = product(*full_vector, *H_t);
+        printMatrix(*full_vector);
+        printMatrix(*target_syndrome);
+        printMatrix(*syndrome);
+        printSet(gamma_compl);
+        puts("end");*/
+
+        if (failed){
+            
+            destroyMatrix(target_syndrome);
+            destroyMatrix(full_vector);
+            incrementVector(curr_trial);
+            continue;
+        }
+
         BinMatrix* zero = zeroVector(gamma_len);
+        BinMatrix* syndrome = product(*full_vector, *H_t);
         //printMatrix(*syndrome);
 
         if (compareVectors(*syndrome,*zero)!=0){
-            destroyMatrix(syndrome);
-            destroyMatrix(zero);
-            destroyMatrix(full_vector);
+            puts("Error: codeword does not belong to code");
+            /*printSet(gamma);
+            printSet(gamma_compl);
+            printMatrix(*full_vector);
+            printMatrix(*target_syndrome);
+            printMatrix(*syndrome);
+            exit(1);*/
+            incrementVector(curr_trial);
             continue;
-        }*/
+        }
 
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
 
-        printf("NEW DIST: %d\n",new_dist);
         printMatrix(*full_vector);
 
         // If you improved the distance, update your guess
@@ -244,11 +320,17 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         }
         else
             destroyMatrix(full_vector);
+
+        destroyMatrix(target_syndrome);
+        /*Code that updates curr_trial*/
+        incrementVector(curr_trial);       
     }
     
     destroyMatrix(H_t);
     destroyMatrix(final);
     destroyMatrix(curr_trial);
+    free(complement_indexes);
+    free(effective_indexes);
 
 }
 
@@ -268,7 +350,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
 
     int i=0;
 
-    puts("Searching for information set...");
+    //puts("Searching for information set...");
     do{
         gamma=getRandomElements(n_set,k,clock()*(i+iteration+7) + time(NULL)*(iteration+i+3));
         H_sub=sampleFromMatrix(gamma->data,k,H,MATRIX_SAMPLE_COLUMNS);
@@ -302,15 +384,20 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     // The best distance so far
     int best_dist=HammingDistance(b,*decoded);
 
-    int e2=compute_e2(n,k,y,e,b_param,0.11002786443835955);
+    int e2=compute_e2(n,k,y,e,b_param,DELTA_0);
 
     printf("--------------------------\n"
            "Best distance starts at %d\n",best_dist);
+    printf("Parameters:\n");
+    printf("\t-y:%d\n",y);
+    printf("\t-e1:%d\n",e);
+    printf("\t-e2:%d\n",e2);
+    printf("\t-b:%d\n",b);
 
     // Compute the syndrome
     BinMatrix* synd = product(b,*H_t);
 
-    printf("Found syndrome: \n");
+    printf("Syndrome is: \n");
     printMatrix(*synd);
 
     // Build the set {1,...,n}
@@ -325,12 +412,17 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
     // Iterate Ln(k,e) times
     for (i=0;i<computeLn(n,k,e);++i){
-
-        printf("--------------------------\nITERATION: %d\n", i);
+        
+        PRINTF("--------------------------\nITERATION: %d\n", i);
         // generate the information set
+
+        begin=clock();
         gamma=getInformationSet(H,n_set,k, i);
-        printf("Generated subset gamma: ");
-        printSet(gamma);
+        end=clock();
+
+        //printf("Generate subset: %ld\n",end-begin);
+        PRINTF("Generated subset gamma: ");
+        PRINTSET(gamma);
 
         // Find H'= [A|I_n-k]
         int* gamma_indexes=gamma->data;
@@ -353,10 +445,10 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
                 }
             }
         }
-        printf("Generated complementary subset of gamma:   {");
-        for (int j=0; j<n-k-1; j++)
+        //printf("Generated complementary subset of gamma:   {");
+        /*for (int j=0; j<n-k-1; j++)
             printf("%d, ", compl_gamma_indexes[j]);
-        printf("%d}\n", compl_gamma_indexes[n-k-1]);
+        printf("%d}\n", compl_gamma_indexes[n-k-1]);*/
 
         BinMatrix* I_n_k=identityMatrix(n-k);
         BinMatrix* A = sampleFromMatrix(gamma_indexes,n-k,H,MATRIX_SAMPLE_COLUMNS);
@@ -376,7 +468,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         // Iterate s times
         for (int j=0;j<s;++j){
 
-            printf("\nITERATION %d/%d\n",j+1,s);
+            PRINTF("\nITERATION %d/%d\n",j+1,s);
 
             // We are splitting for the last time
             bool cond = j==s-1 && (n-k)%y != 0;
@@ -403,22 +495,11 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             VectorList u_1=NULL;
             VectorList u_2=NULL;
 
-            printf("Applying SplitSyndrome on s_i:\n");
+            /*printf("Applying SplitSyndrome on s_i:\n");
             printMatrix(*s_i);
             printf("and H_i\n");
-            printMatrix(*H_i);
+            printMatrix(*H_i);*/
             SplitSyndrome(*H_i,*s_i,3, &u_1,&u_2,e,e2);
-
-            /*puts("INIT---U_1");
-            VectorList_print(u_1);
-            puts("INIT----U_2");
-            VectorList_print(u_2);
-            BinMatrix *con = concat(*(vectorList_pop(&u_1)->v),*(vectorList_pop(&u_2)->v),0);
-            puts("INIT----CONCAT");
-            printMatrix(*con);
-            puts("SYNDROME");
-            printMatrix(*product(*con, *H_t));
-            scanf("%d", &k);*/
             
             K[j]=u_1;
 
@@ -426,14 +507,18 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
         // The list of vectors KGamma
         VectorList KGamma=NULL;
-        printf("Building K(gamma), containing %d lists\n",s);
-        buildKGamma(K,s,b_param,&KGamma);
-        //printf("Gamma successfully built\n");
+        PRINTF("Building K(gamma), containing %d lists\n",s);
 
-        puts("SOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOS");
-        VectorList_print(KGamma);
-        if (KGamma == NULL)printf("WARNING: iteration %d\n", i);
-        puts("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
+        begin=clock();
+        buildKGamma(K,s,b_param,&KGamma);
+        end=clock();
+
+        //printf("Bulding K(gamma): %ld\n",end-begin);
+
+        //VectorList_print(KGamma);
+        if (KGamma == NULL)
+            ;//printf("WARNING: null K(gamma) iteration %d\n", i);
+
 
         // Inspect the list KGamma
         VectorList temp=KGamma;
@@ -448,11 +533,12 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             //printMatrix(*b_Gamma);
             BinMatrix* m = vectorSum(*b_Gamma,*u_full);
 
-            printf("Found m:\n");
-            printMatrix(*m);
-
             // Iterate over the vectors c' whose projection on Gamma equals m
+
+            begin=clock();
             loopOverProjectionOnGamma(gamma,*m,H,b,&decoded,&best_dist);
+            end=clock();
+            PRINTF("Looping over Projection on KGamma: %ld\n",end-begin);
 
             // Cleaning
             destroyMatrix(ul);

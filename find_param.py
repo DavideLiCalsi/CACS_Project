@@ -3,7 +3,7 @@ from math import ceil, floor
 
 def H_2(x):
     #print("Log of",x)
-    return (-x*log(x,2)-(1-x)*log(1-x,2))
+    return (0-x*log(x,2)-(1-x)*log(1-x,2))
 
 def epsilon1(R,alpha,delta_0):
     expr=H_2(delta_0)-R*H_2(alpha/R)-(1-R)*H_2( (delta_0-alpha)/(1-R) )
@@ -39,7 +39,7 @@ def search_parameters(n,k,d):
     b_low=1
     b_high=None # it depends on y
     e1_low=1
-    e1_high=d #floor(n* min(R,delta_0) )
+    e1_high= floor(n* min(R,delta_0) )
 
     print(e1_high)
 
@@ -79,7 +79,7 @@ def search_parameters(n,k,d):
     best_v=best_param['y']/n
     print("e2",compute_e2(delta_0,best_alpha,b,best_v,best_param['y']))
 
-n=500
+n=50
 k=n//2
 R=k/n
 print("CODE RATE",R)
