@@ -1,18 +1,17 @@
-//#include "Matrix.h"
 #include "Matrix/BinaryMatrix.h"
 #include "SplitSyndrome/SupercodeSplitSyndrome.h"
 #include "Utilities/dataReader.h"
 #include "Utilities/utilities.h"
 #include "Supercode/Supercode.h"
 
-double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int iterations){
+double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, int y, int b, int iterations){
 
     int failed=0, success=0, acceptable=0;
     BinMatrix* zero=zeroVector(info->n/2);
 
     for (int i=0;i<iterations;++i){
 
-        int seed=rand();
+        int seed=69;
         BinMatrix *codeword = generateCodeword(G, seed);
         BinMatrix *error = generateError(info->n, info->w, seed);
         BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
@@ -23,16 +22,16 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int 
 
         BinMatrix *decoded = SupercodeDecoding(*G,*H,*receivedCodeword,info->n,(info->n)/2 ,e,y,b,info->w);
 
-        BinMatrix* syn=product(*decoded,*transpose(*H));
+        BinMatrix* syn=product(*decoded,*H_t);
 
         if ( compareVectors(*syn,*zero) !=0){
             failed++;
             continue;
         }
 
-        if ( compareVectors(*decoded,*codeword) ==0)
+        if ( compareVectors(*decoded,*codeword) == 0)
             success++;
-        else
+        else{
             if (HammingDistance(*decoded,*receivedCodeword)<=HammingDistance(*receivedCodeword,*codeword)){
                 acceptable++;
                 printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*receivedCodeword,*codeword));
@@ -41,8 +40,16 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int 
                 printf("Found dist %d, true dist %d\n",HammingDistance(*decoded,*receivedCodeword),HammingDistance(*receivedCodeword,*codeword));
                 failed++;
             }
-                
+        }
+        // free memory
+        destroyMatrix(codeword);
+        destroyMatrix(error);
+        destroyMatrix(receivedCodeword);
+        destroyMatrix(decoded);
+        destroyMatrix(syn);                
     }
+
+    destroyMatrix(zero);
 
     printf("Successful decodings: %d/%d\n",success,iterations);
     printf("Acceptable decodings: %d/%d\n",acceptable,iterations);
@@ -54,7 +61,7 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, int e, int y, int b, int 
 int main(){
 
     srand(time(NULL));
-    int seed = rand();   // fixed for repeatability
+    int seed = rand();   
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
@@ -83,8 +90,6 @@ int main(){
     VectorList l = NULL;
     VectorList r = NULL;
 
-    //SplitSyndrome(*H,*syndrome,info->w,&l,&r);
-
     /*puts("INIT---l");
     VectorList_print(l);
     puts("INIT----r");
@@ -105,7 +110,7 @@ int main(){
     precomputeBinCoefficients(info->n,(info->n)/2);
 
     int e=1,y=1,b=21;
-    run_test(info,G,H,e,y,b,1);
+    run_test(info,G,H,H_t,e,y,b,1);
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
 
@@ -113,11 +118,10 @@ int main(){
     destroyMatrix(H);
     destroyMatrix(H_t);
     destroyMatrix(G);
-    destroyMatrix(codeword);
-    destroyMatrix(error);
-    destroyMatrix(receivedCodeword);
     destroyMatrix(syndrome);
-    //destroyMatrix(decoded);
+    destroyMatrix(codeword);
+    destroyMatrix(receivedCodeword);
+    destroyMatrix(error);
     VectorList_destroy(&l);
     VectorList_destroy(&r);
     

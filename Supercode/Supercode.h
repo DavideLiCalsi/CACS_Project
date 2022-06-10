@@ -88,14 +88,12 @@ void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
         // Retrieve K_i
         //printf("Working on K(%d)\n",i);
         VectorList vector;
-        int index = 0;
         
         // iterate over all the vectors in K_i
         while (1)
         {   
             counter=0;
-            vector=vectorList_get(&lists[i], index);
-            index++;
+            vector=vectorList_pop(&lists[i]);
 
             if (vector==NULL)
                 break;
@@ -115,14 +113,11 @@ void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
                 Free only the node of the vector list, but do not destroy
                 the BinMatrix in it because you might need it later
             */
-            free(vector);
+            VectorList_destroy(&vector);
         }
-        /*puts("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        VectorList_print(*KGamma);
-        puts("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");*/
     }
 
-    //VectorList_destroy(&examined);
+    VectorList_destroy(&examined);
 }
 
 /**
@@ -361,6 +356,7 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
 
         //printf("Determinant %d\n",det);
 
+        // check on the determinant may block the algorithm (not necessary)
         if (1 || det==1 ){
             //printf("Stopped at %d\n",i);
             quicksort(gamma->data,0,k-1);
@@ -411,6 +407,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         set_n_array[i]=i;
 
     Set* n_set = buildSet(set_n_array,n);
+    free (set_n_array);
     Set* gamma=NULL;
 
     // Iterate Ln(k,e) times
@@ -430,6 +427,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         // Find H'= [A|I_n-k]
         int* gamma_indexes=gamma->data;
 
+        /*
         // Find the set complementary to gamma, i.e., {"whole set"}\{gamma}
         int *compl_gamma_indexes = (int *)malloc(sizeof(int)*(n-k));
         int curr_gamma_index = 0;
@@ -448,9 +446,10 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
                 }
             }
         }
+        */
 
 
-        BinMatrix* I_n_k=identityMatrix(n-k);
+        BinMatrix* I_n_k = identityMatrix(n-k);
         BinMatrix* A = sampleFromMatrix(gamma_indexes,n-k,H,MATRIX_SAMPLE_COLUMNS);
         BinMatrix* H_prime = concat(*A,*I_n_k,0);
 
@@ -491,9 +490,20 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             PRINTF("length of H_i: %d\n",H_i->cols);
             SplitSyndrome(*H_i,*s_i,e+e2, &u_1,&u_2,e,e2,k,samplingLen);
             
+            VectorList_destroy(&u_1);
+            u_1=NULL;
             K[j]=u_1;
 
+            destroyMatrix(H_i);
+            destroyMatrix(s_i);
+            VectorList_destroy(&u_2);
+
         }
+
+        free(indexes);
+        destroyMatrix(I_n_k);
+        destroyMatrix(A);
+        destroyMatrix(H_prime);
 
         // The list of vectors KGamma
         VectorList KGamma=NULL;
@@ -501,6 +511,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
         begin=clock();
         buildKGamma(K,s,b_param,&KGamma);
+        KGamma=NULL;
         end=clock();
 
         PRINTF("K(gamma) built in %ld ticks\n",end-begin);
@@ -535,9 +546,14 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             temp=temp->next;
         }
         
+        destroySet(gamma);
+        VectorList_destroy(&KGamma);
         free(K);
-
     }
+
+    destroyMatrix(H_t);
+    destroyMatrix(synd);
+    destroySet(n_set);
 
     return decoded;
 
