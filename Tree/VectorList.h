@@ -153,7 +153,7 @@ bool VectorList_search(BinMatrix v, VectorList l){
 
     while (temp!=NULL)
     {
-        if (compareMatrices(v,*temp->v)==true)
+        if (compareVectors(v,*temp->v)==true)
             return true;
 
         temp=temp->next;

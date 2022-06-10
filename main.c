@@ -11,9 +11,9 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
 
     for (int i=0;i<iterations;++i){
 
-        int seed=69;
+        int seed=rand();
         BinMatrix *codeword = generateCodeword(G, seed);
-        BinMatrix *error = generateError(info->n, info->w, seed);
+        BinMatrix *error = generateError(info->n, info->w-2, seed);
         BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
 
         printf("Error weight: %d\n",HammingWeight(*error));
@@ -80,37 +80,17 @@ int main(){
 
     BinMatrix *codeword = generateCodeword(G, seed);
     BinMatrix *error = generateError(info->n, info->w, seed);
-    //printMatrix(*error);
+    printMatrix(*error);
     BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
     //printMatrix(*receivedCodeword);
 
     BinMatrix *syndrome = product(*receivedCodeword, *H_t);
     //printMatrix(*syndrome);
 
-    VectorList l = NULL;
-    VectorList r = NULL;
-
-    /*puts("INIT---l");
-    VectorList_print(l);
-    puts("INIT----r");
-    VectorList_print(r);
-    BinMatrix *con = concat(*(vectorList_pop(&l)->v),*(vectorList_pop(&r)->v),0);
-    puts("INIT----CONCAT");
-    printMatrix(*con);
-    puts("SYNDROME");
-    printMatrix(*product(*con, *H_t));
-    scanf("%d", &seed);*/
-
-    //int b_vect[20]={ 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
-    //BinMatrix* b= buildMatrix(b_vect,20,1);
-    /*BinMatrix err=*transpose(*zeroVector(info->n));
-    putElement(&err,0,0,1);
-    putElement(&err,0,3,1);*/
-
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=1,y=1,b=21;
-    run_test(info,G,H,H_t,e,y,b,1);
+    int e=1,y=1,b=5;
+    run_test(info,G,H,H_t,e,y,b,5);
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
 
@@ -122,8 +102,6 @@ int main(){
     destroyMatrix(codeword);
     destroyMatrix(receivedCodeword);
     destroyMatrix(error);
-    VectorList_destroy(&l);
-    VectorList_destroy(&r);
     
     return 0;
 }

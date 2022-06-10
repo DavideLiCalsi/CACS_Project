@@ -50,11 +50,6 @@ void searchInLists(VectorList* lists, BinMatrix vector, int len,int* counter){
 
         while (temp != NULL)
         {   
-            /*puts("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
-            printMatrix(vector);
-            printMatrix(*(temp->v));
-            printf("%d\n", compareVectors(vector,*(temp->v)));
-            puts("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");*/
 
             // If you found the target, update counter
             if (compareVectors(vector,*(temp->v)) == 0)
@@ -109,10 +104,6 @@ void buildKGamma(VectorList* lists, int len, int l, VectorList* KGamma){
             if (counter>=l)
                 VectorList_addHead(vector->v,KGamma);
 
-            /* 
-                Free only the node of the vector list, but do not destroy
-                the BinMatrix in it because you might need it later
-            */
             VectorList_destroy(&vector);
         }
     }
@@ -153,7 +144,7 @@ void incrementVector(BinMatrix* v){
  * @param guess The pointer to the pointer to the current best guess
  * @param guess_dist The best distance so far
  */
-void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,BinMatrix** guess, int* guess_dist){
+void loopOverProjectionOnGamma(Set* gamma, BinMatrix m, BinMatrix H, BinMatrix b, BinMatrix** guess, int* guess_dist){
 
     int* indexes=gamma->data;
     int gamma_len=gamma->length;
@@ -165,7 +156,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
 
     for (int i=0, gamma_index=0, compl_index=0; i<n;++i ){
         
-        if (i < gamma->data[gamma_index] || gamma_index==n/2 ){
+        if (gamma_index==n/2 || i < gamma->data[gamma_index]){
             complement_indexes[compl_index]=i;
             compl_index++;
         }
@@ -176,26 +167,23 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
     int effective_dimension=0;
 
     for(int i=0;i<n/2;++i){
-        if (complement_indexes[i]<n/2)
+        if (complement_indexes[i]>=n/2)
             effective_dimension++;
     }
-    Set* gamma_compl=buildSet(complement_indexes,n/2);
 
-    BinMatrix* H_t_complement =sampleFromMatrix(complement_indexes,n/2,*H_t,MATRIX_SAMPLE_ROWS);
+    Set* gamma_compl = buildSet(complement_indexes,n/2);
 
-    effective_dimension=n/2-effective_dimension;
+    //BinMatrix* H_t_complement = sampleFromMatrix(complement_indexes,n/2,*H_t,MATRIX_SAMPLE_ROWS);
 
     int* effective_indexes=(int*) malloc(sizeof(int)*effective_dimension);
 
-    for(int i=0;i<effective_dimension;++i)
-        effective_indexes[i]=n/2-(effective_dimension-i);
+    //for(int i=0;i<effective_dimension;++i)
+    //    effective_indexes[i]=n/2-(effective_dimension-i);
 
-    BinMatrix* H_t_complement_eff = sampleFromMatrix(effective_indexes,effective_dimension,*H_t_complement,MATRIX_SAMPLE_ROWS);
+    //BinMatrix* H_t_complement_eff = sampleFromMatrix(effective_indexes,effective_dimension,*H_t_complement,MATRIX_SAMPLE_ROWS);
     
     /*Compute the syndrome of vector m w.r.t. gamma*/
-    BinMatrix* m_syndrome_gamma=product(m,*H_t_gamma);
-
-    BinMatrix* full_vector;
+    //BinMatrix* m_syndrome_gamma=product(m,*H_t_gamma);
 
     //We will try all possible values for this vector,starting from [0,...,0]
     //Its entries represent the non-fixed entries of the new vector
@@ -206,8 +194,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
 
     int i;
     int gamma_index, curr_trial_index;
-    // TODO: add check that the generated vector is a valid codeword
-    
+    BinMatrix* full_vector;
     
     while (compareVectors(*curr_trial,*final)!=0)
     {   
@@ -215,10 +202,10 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
         // Initialize the full vector to all zeros
         full_vector=zeroVector(n);
 
-        for(int i=0, gamma_index=0, compl_index=0,effective_index=0;i<n;++i){
+        for(int i=0, gamma_index=0, compl_index=0, effective_index=0; i<n; ++i){
             
             // The current position is in gamma, copy from m
-            if (gamma->data[gamma_index]==i){
+            if (gamma_index < n/2 && gamma->data[gamma_index]==i){
                 putElement(full_vector,0,i,getElement(m,0,gamma_index));
                 gamma_index++;
                 continue;
@@ -228,7 +215,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             if (gamma_compl->data[compl_index]==i ){
                 
                 // This position is not multiplied by the identity, copy from the current trial
-                if (i>n/2 ){
+                if ( i>=n/2 ){
                     //printf("EffIndex %d, I index %d, elem %d\n",effective_index,i,getElement(*curr_trial,0,effective_index));
                     putElement(full_vector,0,i,getElement(*curr_trial,0,effective_index));
                     effective_index++;
@@ -245,11 +232,11 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
 
         bool failed=false;
 
-        for(int i=0, compl_index=0;i<target_syndrome->cols;++i){
+        for(int i=0, compl_index=0; i<target_syndrome->cols; ++i){
             
-            if ( getElement(*target_syndrome,0,i)==1 ){
+            if ( getElement(*target_syndrome,0,i) == 1 ){
 
-                if (  i != complement_indexes[compl_index ] ) {
+                if (  i != complement_indexes[compl_index] ) {
                     failed=true;
                     break;
                 }
@@ -262,7 +249,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
                     
             }
             else{
-                if (  i == complement_indexes[compl_index ] ) 
+                if (  i == complement_indexes[compl_index] ) 
                     compl_index++; 
             }
                 
@@ -298,6 +285,8 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             incrementVector(curr_trial);
             continue;
         }
+        destroyMatrix(syndrome);
+        destroyMatrix(zero);
 
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
@@ -323,8 +312,10 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
     }
     
     destroyMatrix(H_t);
+    destroyMatrix(H_t_gamma);
     destroyMatrix(final);
     destroyMatrix(curr_trial);
+    destroySet(gamma_compl);
     free(complement_indexes);
     free(effective_indexes);
 
@@ -490,8 +481,6 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             PRINTF("length of H_i: %d\n",H_i->cols);
             SplitSyndrome(*H_i,*s_i,e+e2, &u_1,&u_2,e,e2,k,samplingLen);
             
-            VectorList_destroy(&u_1);
-            u_1=NULL;
             K[j]=u_1;
 
             destroyMatrix(H_i);
@@ -511,7 +500,6 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
         begin=clock();
         buildKGamma(K,s,b_param,&KGamma);
-        KGamma=NULL;
         end=clock();
 
         PRINTF("K(gamma) built in %ld ticks\n",end-begin);
@@ -527,8 +515,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
         while (temp != NULL)
         {
             BinMatrix* ul = temp->v;
-            
-            BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
+            BinMatrix* b_Gamma = sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
             BinMatrix* m = vectorSum(*b_Gamma,*ul);
 
             // Iterate over the vectors c' whose projection on Gamma equals m
@@ -539,7 +526,6 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             PRINTF("Looping over Projection on KGamma took %ld ticks\n",end-begin);
 
             // Cleaning
-            destroyMatrix(ul);
             destroyMatrix(b_Gamma);
             destroyMatrix(m);
 
