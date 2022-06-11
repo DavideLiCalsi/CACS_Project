@@ -24,7 +24,7 @@ int compute_e2(int n, int k, int y, int e1, int b, double delta_0){
     double alpha = e1*1.0/n;
     double v=y*1.0/n;
     double R=k*1.0/n;
-    return ceil( (delta_0-alpha)/(1-R-(b-1)*v) );
+    return ceil( (delta_0-alpha)*1.0/(1-R-(b-1)*v) );
 }
 
 
@@ -213,7 +213,8 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
     int gamma_index, curr_trial_index;
     // TODO: add check that the generated vector is a valid codeword
     
-    
+    int curr_as_int=0;
+    int final_int= 1 << effective_dimension;
     while (compareVectors(*curr_trial,*final)!=0)
     {   
 
@@ -233,7 +234,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             if (gamma_compl->data[compl_index]==i ){
                 
                 // This position is not multiplied by the identity, copy from the current trial
-                if (i>n/2 ){
+                if (i>=n/2 ){
                     //printf("EffIndex %d, I index %d, elem %d\n",effective_index,i,getElement(*curr_trial,0,effective_index));
                     putElement(full_vector,0,i,getElement(*curr_trial,0,effective_index));
                     effective_index++;
@@ -288,7 +289,7 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             continue;
         }
 
-        BinMatrix* zero = zeroVector(gamma_len);
+        /*BinMatrix* zero = zeroVector(gamma_len);
         BinMatrix* syndrome = product(*full_vector, *H_t);
         //printMatrix(*syndrome);
 
@@ -299,10 +300,10 @@ void loopOverProjectionOnGamma(Set* gamma,BinMatrix m,BinMatrix H,BinMatrix b,Bi
             printMatrix(*full_vector);
             printMatrix(*target_syndrome);
             printMatrix(*syndrome);
-            exit(1);*/
+            exit(1);
             incrementVector(curr_trial);
             continue;
-        }
+        }*/
 
         // Now check if you improved the distance
         int new_dist = HammingDistance(b,*full_vector);
@@ -357,20 +358,16 @@ Set* getInformationSet(BinMatrix H,Set* n_set,int k, int iteration){
         H_sub=sampleFromMatrix(gamma->data,k,H,MATRIX_SAMPLE_COLUMNS);
 
         //printMatrix(*H_sub);
-        int det = determinant(*H_sub);
+        //int det = determinant(*H_sub);
 
         //printf("Determinant %d\n",det);
 
-        if (1 || det==1 ){
+        
             //printf("Stopped at %d\n",i);
-            quicksort(gamma->data,0,k-1);
-            destroyMatrix(H_sub);
-            return gamma;
-        }
-
+        quicksort(gamma->data,0,k-1);
         destroyMatrix(H_sub);
-        destroySet(gamma);
-        i++;
+        return gamma;
+        
     }while (true);
     
 }
@@ -385,7 +382,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     // The best distance so far
     int best_dist=HammingDistance(b,*decoded);
 
-    int e2=compute_e2(n,k,y,e,b_param,DELTA_0);
+    int e2=1;compute_e2(n,k,y,e,b_param,DELTA_0);
     int tot_iterations=computeLn(n,k,e);
 
     printf("--------------------------\n"
@@ -416,7 +413,8 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     // Iterate Ln(k,e) times
     for (i=0;i<tot_iterations;++i){
         
-        PRINTF("--------------------------\nITERATION: %d\n", i);
+        printf("\r--------------------------ITERATION: %d", i);
+        fflush(stdout);
         // generate the information set
 
         begin=clock();
@@ -512,12 +510,12 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
         // Inspect the list KGamma
         VectorList temp=KGamma;
-        
+        BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
+
         while (temp != NULL)
         {
             BinMatrix* ul = temp->v;
-            
-            BinMatrix* b_Gamma=sampleFromMatrix(gamma->data,gamma->length,b,MATRIX_SAMPLE_COLUMNS);
+        
             BinMatrix* m = vectorSum(*b_Gamma,*ul);
 
             // Iterate over the vectors c' whose projection on Gamma equals m
@@ -529,12 +527,12 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
 
             // Cleaning
             destroyMatrix(ul);
-            destroyMatrix(b_Gamma);
             destroyMatrix(m);
 
             temp=temp->next;
         }
         
+        destroyMatrix(b_Gamma);
         free(K);
 
     }

@@ -1,5 +1,7 @@
 from sympy import *
 from math import ceil, floor
+from scipy.special import binom
+import sys
 
 def H_2(x):
     #print("Log of",x)
@@ -19,6 +21,10 @@ def complexity(R,delta_0,alpha,b,v):
 
 def compute_e2(delta_0,alpha,b,v,y):
     expr= ((delta_0-alpha)/(1-R-(b-1)*v))*y
+    return expr
+
+def computeIterations(n,k,e,GV_dist):
+    expr= n*log(n,2)*( binom(n,GV_dist)/( binom(k,e)*binom(n-k,GV_dist-e) ) )
     return expr
 
 
@@ -66,7 +72,8 @@ def search_parameters(n,k,d):
                 if delta_0-alpha<(1-R -(b-1)*v) and alpha < min(delta_0,R) and alpha > max(0,delta_0+R-1):
                     print("Trying y:",y,"e1:",e1,"b:",b, end=" Complexity: ")
                     new_complexity=complexity(R,delta_0,alpha,b,v)
-                    print(N(new_complexity))
+                    print(N(new_complexity), end=" Iterations: ")
+                    print( ceil( N(computeIterations(n,k,e1,13))) )
 
                     if best_complexity==-1 or new_complexity < best_complexity:
                         best_complexity=N(new_complexity)
@@ -74,12 +81,18 @@ def search_parameters(n,k,d):
                         best_param['e1']=e1
                         best_param['y']=y
     
-    print(best_param,best_complexity)
+    print("FOUND PARAMETERS")
+    print("\ty:",best_param['y'])
+    print("\te1:",best_param['e1'])
+    print("\tb:",best_param['b'])
     best_alpha=best_param['e1']/n
     best_v=best_param['y']/n
-    print("e2",compute_e2(delta_0,best_alpha,b,best_v,best_param['y']))
+    print("\te2:",compute_e2(delta_0,best_alpha,b,best_v,best_param['y']))
+    print("Expected complexity:", N(complexity(0.5,delta_0,best_alpha,best_param['b'],best_v)))
+    print("Expected number of iterations:", ceil( N(computeIterations(n,k,best_param['e1'],9))) )
 
-n=50
+
+n=int(sys.argv[1])
 k=n//2
 R=k/n
 print("CODE RATE",R)

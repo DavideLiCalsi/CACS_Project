@@ -288,7 +288,7 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, VectorList* el, VectorList* er, 
 
             VectorList curr=vectorList_pop(&temp);
 
-            if ( HammingWeight( *(curr->v) )<=e1 )
+            if ( HammingWeight( *(curr->v) )<=e2 )
                 VectorList_addHead(curr->v, er);
         }
         
@@ -296,7 +296,7 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, VectorList* el, VectorList* er, 
         while(temp!=NULL){
             VectorList curr=vectorList_pop(&temp);
 
-            if ( HammingWeight( *(curr->v) ) <=e2 )
+            if ( HammingWeight( *(curr->v) ) <=e1 )
                 VectorList_addHead(curr->v, el);
         }
 

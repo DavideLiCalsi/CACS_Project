@@ -104,7 +104,7 @@ int main(){
 
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=1,y=1,b=21;
+    int e=1,y=1,b=30;
     run_test(info,G,H,e,y,b,1);
 
     //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));

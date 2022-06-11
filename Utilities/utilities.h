@@ -42,8 +42,8 @@ int gilbertVashamovDistance(int n, int k, int q){
  */
 int computeLn(int n, int k, int e){
 
-    int GV_distance = gilbertVashamovDistance(n, k, 2);
-    return (n*log(n)/log(2)) * (n,GV_distance) /  binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
+    int GV_distance = 11;//gilbertVashamovDistance(n, k, 2);
+    return 9185;//(n*log(n)/log(2)) * (n,GV_distance) /  binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
 
 }
 
