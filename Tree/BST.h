@@ -84,7 +84,6 @@ void destroyTree(BST* tree, int type){
         destroyMatrix((BinMatrix*) temp->key);
         VectorList_destroy((VectorList*) &(temp->data) );
         free(temp);
-        //printf("Freed node!\n");
         break;
     
     default:
@@ -109,14 +108,12 @@ int addNode(void* key,void* data, BST* tree, int type){
     BST new_node = (BST) malloc(sizeof(BSTNode));
 
     if (type == BST_COMPARISON_INT){
-        new_key = (int*) malloc(sizeof(int));
-        *new_key=*(int*)key;
+        new_key=(int*)key;
         new_node->key=(void*)new_key;
     }
 
     if (type == BST_COMPARISON_BINMATRIX){
-        new_key_vect = (BinMatrix*) malloc(sizeof(BinMatrix));
-        *new_key_vect = *(BinMatrix*)key;
+        new_key_vect = (BinMatrix*)key;
         new_node->key=(void*)new_key_vect;
     }
     
@@ -181,6 +178,7 @@ int addNode(void* key,void* data, BST* tree, int type){
             
             if (type==BST_COMPARISON_BINMATRIX){
                 VectorList_addHead((BinMatrix*)data, (VectorList*)&(tmp->data) );
+                destroyMatrix(new_key_vect);
                 free(new_node);
             }
             return BST_RES_SUCCESS;
@@ -254,7 +252,7 @@ BSTNode* searchNode(void* key, BST tree, int type){
     while (1)
     {
         /* code */
-        int res =compareData(key,tmp->key,type);
+        int res = compareData(key,tmp->key,type);
 
         switch (res)
         {

@@ -139,7 +139,7 @@ bool updateIndexes(int* indexes, int* moduli, int u){
     int count;
     for (i=0; i<u; ++i){
 
-        if (indexes[i]!=0 && indexes[i+1]==0 && !clean && i!=u-1  ){
+        if (indexes[i]!=0 && (i==(u-1) || indexes[i+1]==0) && !clean && i!=u-1  ){
             clean = true;
             count=indexes[i];
             continue;
@@ -181,7 +181,8 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         }
         BinMatrix* e = buildMatrix(array,1,m);
         BinMatrix* s = product(*e,H_l_r);
-        addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
+        addNode((void*)s, (void*) e, X, BST_COMPARISON_BINMATRIX);
+        destroyMatrix(e);
         free(indexes);
         free(moduli);
         free(array);
@@ -209,12 +210,11 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         BinMatrix* e = buildMatrix(array,1,m);
         BinMatrix* s = product(*e,H_l_r);
         PRINTMATRIX_PTR(e);
-        addNode((void*)s, (void*) e, X,BST_COMPARISON_BINMATRIX);
+        addNode((void*)s, (void*) e, X, BST_COMPARISON_BINMATRIX);
+        destroyMatrix(e);
         count++;
     }while (updateIndexes(indexes,moduli,u));
     
-
-    //printf("Tested %d vectors\n",count);
     free(indexes);
     free(moduli);
     free(array);
@@ -282,29 +282,27 @@ bool inspectTables(BST Xr, BST Xl, BinMatrix s, VectorList* el, VectorList* er, 
     node = searchNode((void*)left_syndrome,Xl,BST_COMPARISON_BINMATRIX);
 
     if (node != NULL){
+        
+        while(node->data!=NULL){
 
-        VectorList temp = (VectorList)Xr->data;
-        while(temp!=NULL){
+            VectorList curr=vectorList_pop( (VectorList *)(&(node->data)) );
+            if ( HammingWeight( *(curr->v) ) <= e1 )
+                VectorList_addHead(curr->v, el);            
+            VectorList_destroy(&curr);
 
-            VectorList curr=vectorList_pop(&temp);
+        }
 
-            if ( HammingWeight( *(curr->v) )<=e2 )
+        while(Xr->data!=NULL){
+
+            VectorList curr=vectorList_pop((VectorList *)(&(Xr->data)));
+
+            if ( HammingWeight( *(curr->v) ) <= e2 )
                 VectorList_addHead(curr->v, er);
+            VectorList_destroy(&curr);
+            
         }
         
-        temp = (VectorList)node->data;
-        while(temp!=NULL){
-            VectorList curr=vectorList_pop(&temp);
-
-            if ( HammingWeight( *(curr->v) ) <=e1 )
-                VectorList_addHead(curr->v, el);
-        }
-
-        /*
-        *er = (VectorList) Xr->data;
-        *el = (VectorList) node->data;
-        //printf("FOUND!\n");
-        */
+        destroyMatrix(left_syndrome);
         return true;
     }
     else{
@@ -382,16 +380,6 @@ void buildRightTable(int m,int t_minus_u, int len, BinMatrix H, BST* Xr){
     BinMatrix* samples = sampleFromMatrix(indexes,len-m,H,MATRIX_SAMPLE_COLUMNS);
     BinMatrix* Hr = transpose(*samples);
 
-    /*for (i=0; i<pow(2,len-m);++i){
-
-        if ( intToBinVector(i,error_as_vector,len-m) != t_minus_u)
-            continue;
-        
-        BinMatrix* er = buildMatrix(error_as_vector,1,len-m);
-        BinMatrix* sr = product(*er,*Hr);
-        addNode((void*)sr, (void*) er, Xr,BST_COMPARISON_BINMATRIX);
-    }*/
-
     iterateOverM_Vectors(len-m,t_minus_u,*Hr,Xr);
 
     destroyMatrix(samples);
@@ -412,15 +400,9 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     int t,u,m;
     BST Xl=NULL;
     BST Xr=NULL;
-    /*VectorList el;
-    VectorList er;*/
-    //PairSet* tables=malloc(sizeof(PairSet)*(d+1));
 
     // First do the precomputation step
     //printf("Starting the precomputation stage\n");
-
-    // Compute some bin coefficients (already computed in main)
-    // precomputeBinCoefficients(100,100);
 
     // Build the tables E(1),...,E(d)
     /*for (t=1; t<=d;++t){
@@ -464,11 +446,6 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
                 PRINTVLIST(*left);
                 //VectorList_print(er);
                 //return;
-                /*
-                *left=el;
-                *right=er;
-                return;
-                */
             }
 
             destroyTree(&Xl,BST_COMPARISON_BINMATRIX);

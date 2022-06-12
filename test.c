@@ -5,6 +5,7 @@
 #include "Utilities/utilities.h"
 #include "Utilities/randomSelector.h"
 #include "Utilities/dataReader.h"
+#include "SplitSyndrome/SupercodeSplitSyndrome.h"
 
 
 int main(){
@@ -93,9 +94,8 @@ int main(){
     destroyInfo(info);*/
 
 
-    precomputeBinomialCoefficients(100, 100);
-    int distance = gilbertVashamovDistance(100, 50, 2);
-    printf("\n%d", distance);
+    /*int distance = gilbertVashamovDistance(100, 50, 2);
+    printf("\n%d", distance);*/
     
 
     return 0;

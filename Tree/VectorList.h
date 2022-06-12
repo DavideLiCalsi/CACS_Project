@@ -36,7 +36,7 @@ void VectorList_print(VectorList p){
 void VectorList_addHead(BinMatrix* m, VectorList* p){
 
     VectorList newNode = (VectorList) malloc(sizeof(VectorNode));
-    newNode->v = m;
+    newNode->v = copyMatrix(m);
 
     if (*p==NULL){
         
@@ -95,18 +95,14 @@ void VectorList_destroy(VectorList* l){
 VectorList vectorList_pop(VectorList* p){
 
     if (*p == NULL){
-        printf("End of vectorlist reached\n");
+        //printf("End of vectorlist reached\n");
         return NULL;
     }
 
-    VectorList ret = (VectorList)malloc(sizeof(VectorNode));
-    ret->v = copyMatrix((*p)->v);
+    VectorList ret = *p;
+    (*p) = (*p)->next;
     ret->next = NULL;
-    VectorList old = *p;
-    (*p)=(*p)->next;
-    //free(old);
 
-    //VectorList_print(ret);
     return ret;
 }
 
@@ -157,7 +153,7 @@ bool VectorList_search(BinMatrix v, VectorList l){
 
     while (temp!=NULL)
     {
-        if (compareMatrices(v,*temp->v)==true)
+        if (compareVectors(v,*temp->v)==true)
             return true;
 
         temp=temp->next;

@@ -1,2 +1,6 @@
-break compute_e2
+break BinaryMatrix.h:148
+
+
+
+
 

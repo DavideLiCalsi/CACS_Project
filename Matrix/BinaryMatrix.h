@@ -742,8 +742,8 @@ char addRowsSlow(BinMatrix* m,int i, int j){
     int row_len=m->cols;
 
     while (col_index<row_len)
-    {
-        char new = ( getElement(*m,i,col_index) ^ getElement(*m,j,col_index) ) %2;
+    {   
+        char new = ( getElement(*m,i,col_index) ^ getElement(*m,j,col_index) );
         putElement(m,i,col_index,new);
         col_index++;
     }
@@ -756,12 +756,46 @@ void swapRowsSlow(BinMatrix* m, int i, int j){
 
     while (col_index<row_len)
     {
-        char i_val= getElement(*m,i,col_index)%2;
-        char j_val= getElement(*m,i,col_index)%2;
+        char i_val= getElement(*m,i,col_index);
+        char j_val= getElement(*m,j,col_index);
         putElement(m,i,col_index,j_val);
         putElement(m,j,col_index,i_val);
         col_index++;
     }
+}
+
+BinMatrix* GaussElimination(BinMatrix m){
+    int i,j,k;
+
+   // puts("BEGIN DET");
+    for (j=0; j<m.cols;++j){
+
+        k=j;
+
+        /*
+        With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
+        */
+        for (i=j; i<m.rows;++i){
+
+            if ( getElement(m,i,j) == 1 ){
+                swapRowsSlow(&m,k,i);
+                k++;
+            }
+        }
+
+        /*
+        Sum rows to bring the matrix in inferior triangular form
+        */
+        for (i=j+1; i<m.rows;++i ){
+
+            if ( getElement(m,i,j) == 1 ){
+
+                addRowsSlow(&m,i,j);
+            }
+        }
+    }
+
+    return copyMatrix(&m);
 }
 
 /**
@@ -789,7 +823,7 @@ char determinant(BinMatrix m){
         for (i=j; i<m.rows;++i){
 
             if ( getElement(m,i,j) == 1 ){
-                swapRows(&m,k,i);
+                swapRowsSlow(&m,k,i);
                 k++;
             }
         }
@@ -840,6 +874,7 @@ BinMatrix* inverse(BinMatrix m){
     // Build the augmented matrix by concatenating the matrix to invert
     // and the Identity
     BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
+    //printMatrix(*augmented);
 
     for (j=0; j<m.cols;++j){
 
@@ -848,10 +883,10 @@ BinMatrix* inverse(BinMatrix m){
         /*
         With this loop, you turn the j-th column in the form [1,1,...,1,0,0,...,0]
         */
-        for (i=j+1; i<m.rows;++i){
+        for (i=j; i<m.rows;++i){
 
             if ( getElement(*augmented,i,j) == 1 && k !=i){
-                swapRows(augmented,k,i);
+                swapRowsSlow(augmented,k,i);
                 k++;
             }
         }
@@ -859,10 +894,23 @@ BinMatrix* inverse(BinMatrix m){
         /*
         Sum rows to bring the matrix in inferior triangular form
         */
-        for (i=0; i<m.rows;++i ){
+        for (i=j+1; i<m.rows;++i ){
 
             if ( i!=j && getElement(*augmented,i,j) == 1 )
-                addRows(augmented,i,j);
+                addRowsSlow(augmented,i,j);
+        }
+    }
+
+    //Now obtain the identity
+
+    for (i=1;i<m.rows;++i){
+
+        for(j=0;j<i;++j){
+
+            if (i!=j && getElement(*augmented,j,i)==1){
+                addRowsSlow(augmented,j,i);
+            }
+
         }
     }
 
@@ -886,7 +934,17 @@ BinMatrix* inverse(BinMatrix m){
         }
     }
 
-    destroyMatrix(augmented);
+    //destroyMatrix(augmented);
+
+    BinMatrix* check=product(*inv,m);
+
+    /*if (!compareMatrices(*check,*identityMatrix(m.rows)) ){
+        puts("ERROR");
+        printMatrix(*check);
+        printMatrix(*inv);
+        printMatrix(*augmented);
+        exit(0);
+    }*/
     return inv;
 }
 

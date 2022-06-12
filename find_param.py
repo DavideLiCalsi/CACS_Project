@@ -73,7 +73,7 @@ def search_parameters(n,k,d):
                     print("Trying y:",y,"e1:",e1,"b:",b, end=" Complexity: ")
                     new_complexity=complexity(R,delta_0,alpha,b,v)
                     print(N(new_complexity), end=" Iterations: ")
-                    print( ceil( N(computeIterations(n,k,e1,13))) )
+                    print( ceil( N(computeIterations(n,k,e1,14))) )
 
                     if best_complexity==-1 or new_complexity < best_complexity:
                         best_complexity=N(new_complexity)

@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include "../Matrix/BinaryMatrix.h"
+#include "../SplitSyndrome/SupercodeSplitSyndrome.h"
 #include "dataStructures.h"
 #include "randomSelector.h"
 
@@ -42,8 +43,8 @@ int gilbertVashamovDistance(int n, int k, int q){
  */
 int computeLn(int n, int k, int e){
 
-    int GV_distance = 11;//gilbertVashamovDistance(n, k, 2);
-    return 9185;//(n*log(n)/log(2)) * (n,GV_distance) /  binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e);
+    int GV_distance = 12;//gilbertVashamovDistance(n, k, 2);
+    return 8066;//(n*log(n)/log(2)) * binomialCoeff(n,GV_distance) /  (binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e) );
 
 }
 

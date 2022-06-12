@@ -88,7 +88,7 @@ void addSetElem (Set *set, int elem){
         set->length += 1;
         set->data = (int *)realloc(set->data, sizeof(int)*set->length);
         if (set->data == NULL)
-            printf("SUUUUUUUUUUUUUUS\n");
+            printf("Error on the random set generation\n");
         (set->data)[set->length-1] = elem;
     }
 }
