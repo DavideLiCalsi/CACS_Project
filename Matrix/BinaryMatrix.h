@@ -564,7 +564,7 @@ BinMatrix* vectorSum(BinMatrix v1, BinMatrix v2){
  * @brief Computes the inner (scalar) product of the two vectors
  *
  */
-char vectorProduct(BinMatrix v1, BinMatrix v2){
+unsigned char vectorProduct(BinMatrix v1, BinMatrix v2){
 
     if ( !( isRowVector(v1) && isColumnVector(v2) ) ){
         printf("Error. Scalar product can be computed on a row vector and a column vector only");
@@ -578,19 +578,27 @@ char vectorProduct(BinMatrix v1, BinMatrix v2){
 
     int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / ( 8*(sizeof(unsigned long)) ) );
     int j;
-    char res;
+    unsigned char res;
+    unsigned char res_test=0;
 
     for(int i=0; i<ulong_needed;++i){
 
         unsigned long and = v1.data[i] & v2.data[i];
 
-        for (j=0, res=0; j< 8*sizeof(unsigned long); ++j){
+        for (j=0,res=0; j< 8*sizeof(unsigned long); ++j){
 
-            res ^= (and >> j) & 1;
+            res ^= (and >> j) & 1UL;
+            res_test ^= (and >> j) & 1UL;
         }
+
     }
 
-    return res;
+    /*if (res != res_test){
+        puts("ANOMALY");
+        printf("%d %d\n",res,res_test);
+        exit(0);
+    }*/
+    return res_test;
 }
 
 /**
