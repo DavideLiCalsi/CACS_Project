@@ -7,7 +7,7 @@
 #include <time.h>
 #include "../Utilities/debug.h"
 
-unsigned int binCoefficients[200][200];
+double binCoefficients[200][200];
 int valid[200][200];
 
 /**
@@ -15,9 +15,9 @@ int valid[200][200];
  * 
  * @param n 
  * @param k 
- * @return int 
+ * @return double 
  */
-unsigned int binomialCoeff(unsigned int n, unsigned int k){
+double binomialCoeff(unsigned int n, unsigned int k){
     // Base Cases
     if (k > n){
         valid[n][k]=1;
@@ -41,7 +41,7 @@ unsigned int binomialCoeff(unsigned int n, unsigned int k){
         return binCoefficients[n][k];
  
     // Recur
-    unsigned int t1,t2;
+    double t1,t2;
 
     if (valid[n-1][k-1] == -1){
         t1=binomialCoeff(n - 1, k - 1);
@@ -80,7 +80,6 @@ void precomputeBinCoefficients(unsigned int n, unsigned int w){
     for (m = 1; m <= n; m++)
         for (t = 1; t <= 100; t++)
             binCoefficients[m][t] = binCoefficients[m-1][t-1] + binCoefficients[m-1][t];
-
 
 }
 

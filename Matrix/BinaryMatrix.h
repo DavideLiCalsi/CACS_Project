@@ -1,6 +1,6 @@
 #ifndef BINMATRIX_H
 #define BINMATRIX_H
-
+#define N 50
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,10 +83,9 @@ int putElement(BinMatrix* m, int i, int j, int val){
 
     if ( indexWithinBoundsPtr(m,i,j) ){
 
-        int array_index= (m->cols * i + j) / (8*sizeof(unsigned long));
+        int array_index = (m->cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m->cols * i + j) % (8*sizeof(unsigned long));
         array_selector = 8*sizeof(unsigned long) - array_selector - 1;
-        unsigned long selector = 1UL << array_selector;
 
         switch (val)
         {
@@ -578,18 +577,21 @@ char vectorProduct(BinMatrix v1, BinMatrix v2){
 
     int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / ( 8*(sizeof(unsigned long)) ) );
     int j;
-    char res;
+    char res = 0;
 
-    for(int i=0; i<ulong_needed;++i){
+    for(int i=0; i<ulong_needed; ++i){
 
         unsigned long and = v1.data[i] & v2.data[i];
 
-        for (j=0, res=0; j< 8*sizeof(unsigned long); ++j){
+        bool condition = (i==(ulong_needed-1)) && (v1.cols%(8*sizeof(unsigned long))!= 0);
+        int stop = condition ? v1.cols%(8*sizeof(unsigned long)) : 8*sizeof(unsigned long);
+        for (j=0; j<stop; ++j){
 
-            res ^= (and >> j) & 1;
+            res ^= (and >> (8*sizeof(unsigned long)-j-1) ) & 1;
         }
     }
-
+    
+    
     return res;
 }
 
@@ -618,7 +620,7 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
 
             BinMatrix* row=getRow(m1,i);
             BinMatrix* column=getColumn(m2,j);
-            int val = vectorProduct( *row,*column);
+            int val = vectorProduct(*row,*column);
             destroyMatrix(row);
             destroyMatrix(column);
             if( putElement(res,i,j,val) != MATRIX_SUCCESS)
@@ -871,10 +873,10 @@ BinMatrix* inverse(BinMatrix m){
         return NULL;
     }
 
-    // Build the augmented matrix by concatenating the matrix to invert
-    // and the Identity
-    BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
-    //printMatrix(*augmented);
+    // Build the augmented matrix by concatenating the matrix to invert and the Identity
+    BinMatrix *identity = identityMatrix(m.rows);
+    BinMatrix *augmented = concat(m,*identity,0);
+    destroyMatrix(identity);
 
     for (j=0; j<m.cols;++j){
 
@@ -934,17 +936,18 @@ BinMatrix* inverse(BinMatrix m){
         }
     }
 
-    //destroyMatrix(augmented);
-
-    BinMatrix* check=product(*inv,m);
-
-    /*if (!compareMatrices(*check,*identityMatrix(m.rows)) ){
+    /*BinMatrix* check=product(*inv,m);
+    if (!compareMatrices(*check,*identityMatrix(m.rows)) ){
         puts("ERROR");
         printMatrix(*check);
         printMatrix(*inv);
         printMatrix(*augmented);
         exit(0);
     }*/
+
+    // free memory
+    destroyMatrix(augmented);
+
     return inv;
 }
 

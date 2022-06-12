@@ -21,10 +21,10 @@
  */
 int gilbertVashamovDistance(int n, int k, int q){
 
-    unsigned long long y = pow(q, n-k);
+    double y = pow(q, n-k);
     int distance = 1;
 
-    unsigned long long partial_sum = 0;
+    double partial_sum = 0;
     while(partial_sum <= y){
         distance++;
         partial_sum += binomialCoeff(n,distance-1)*pow(q-1,distance-1);
@@ -39,12 +39,16 @@ int gilbertVashamovDistance(int n, int k, int q){
  * @param n 
  * @param k 
  * @param e 
- * @return int 
+ * @return unsigned long int 
  */
-int computeLn(int n, int k, int e){
+unsigned long int computeLn(int n, int k, int e){
 
-    int GV_distance = 12;//gilbertVashamovDistance(n, k, 2);
-    return 8066;//(n*log(n)/log(2)) * binomialCoeff(n,GV_distance) /  (binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e) );
+    //int GV_distance = 12;
+    int GV_distance = gilbertVashamovDistance(n, k, 2);
+    
+    double result_d = (n*log(n)/log(2)) * binomialCoeff(n,GV_distance) /  (binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e) );
+    unsigned long int result = round(result_d);
+    return round(result);
 
 }
 

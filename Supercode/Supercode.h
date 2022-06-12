@@ -157,8 +157,10 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     old=G_gamma;
     G_gamma=transpose(*G_gamma);
     destroyMatrix(old);
-
-    BinMatrix* Gelim_input=concat(*G_gamma,*transpose(m),0);
+    
+    BinMatrix *m_transpose = transpose(m);
+    BinMatrix *Gelim_input=concat(*G_gamma,*m_transpose,0);
+    destroyMatrix(m_transpose);
 
     /*puts("\nAugmented");
     //printMatrix(*Gelim_input);*/
@@ -176,26 +178,33 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
         if (getElement(*reduced,i,i)!=1)
             break;
         
-        ++eff_dim;
+        eff_dim++;
         i++;
 
     }while (i<k);
 
+    if ((k-eff_dim)>=18) return;
+
     if (eff_dim==k){
         
         begin=clock();
-        BinMatrix* final= product(*inverse(*G_gamma),*transpose(m));
+        BinMatrix *G_gamma_inv = inverse(*G_gamma);
+        BinMatrix *m_transpose = transpose(m);
+        BinMatrix* final= product(*G_gamma_inv,*m_transpose);
         end=clock();
-        PRINTF("Inversion took %d\n",end-begin);
+        PRINTF("Inversion took %ld\n",end-begin);
+        destroyMatrix(G_gamma_inv);
+        destroyMatrix(m_transpose);
         
-        BinMatrix* new_guess=product(*transpose(*final),G);
-        //printMatrix(*new_guess);
-        //exit(0);
-        BinMatrix* test=sampleFromMatrix(gamma->data,k,*new_guess,MATRIX_SAMPLE_COLUMNS);
+        BinMatrix *final_transpose = transpose(*final);
+        BinMatrix *new_guess=product(*final_transpose,G);
+        destroyMatrix(final_transpose);
+
+        BinMatrix *test=sampleFromMatrix(gamma->data,k,*new_guess,MATRIX_SAMPLE_COLUMNS);
 
         if ( compareVectors(*test,m)!=0){
             puts("ALARM");
-            printMatrix(*final);
+            printMatrix(*transpose(*final));
             printMatrix(m);
             printMatrix(*test);
             exit(-1);
@@ -235,7 +244,9 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     fflush(stdout);
 
     // curr_trial = [ 0...0 | effective bits to try ]
-    BinMatrix* curr_trial=transpose(*zeroVector(k));
+    BinMatrix *zero = zeroVector(k);
+    BinMatrix* curr_trial=transpose(*zero);
+    destroyMatrix(zero);
 
     int* indexes= (int*) (malloc(sizeof(int)*(eff_dim)));
     int* non_eff_indexes= (int*) (malloc(sizeof(int)*(k-eff_dim)));
@@ -264,11 +275,11 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     printMatrix(*product(*inv,*invertible));*/
 
 
-    int curr_as_int=0;
+    int curr_as_int = 0;
     int final=(1<< (k-eff_dim));
 
-    int last_index=k;
-    BinMatrix* new_m=sampleFromMatrix(&last_index,1,*reduced,MATRIX_SAMPLE_COLUMNS);
+    int last_index = k;
+    BinMatrix* new_m = sampleFromMatrix(&last_index,1,*reduced,MATRIX_SAMPLE_COLUMNS);
 
     //puts("NEw m");
     //printMatrix(*new_m);
@@ -285,14 +296,17 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
         fflush(stdout);*/
 
         // t contains the target to find
-        BinMatrix* x=product(*reduced_left,*curr_trial);
-        BinMatrix* y=transpose(*x);
-        BinMatrix* t= vectorSum(*new_m,*x);
+        BinMatrix* x = product(*reduced_left,*curr_trial);
+        BinMatrix* y = transpose(*x);
+        BinMatrix* t = vectorSum(*new_m,*x);
         destroyMatrix(x);
         destroyMatrix(y);
 
-        BinMatrix* last_target=transpose(*sampleFromMatrix(non_eff_indexes,k-eff_dim,*t,MATRIX_SAMPLE_ROWS));
-        BinMatrix* ref=zeroVector(k-eff_dim);
+        BinMatrix *matrix_sampled = sampleFromMatrix(non_eff_indexes,k-eff_dim,*t,MATRIX_SAMPLE_ROWS);
+        BinMatrix *last_target = transpose(*matrix_sampled);
+        BinMatrix *ref=zeroVector(k-eff_dim);
+        destroyMatrix(matrix_sampled);
+
         if (compareVectors(*last_target,*ref)!=0){
             /*puts("Different");
             printMatrix(*last_target);
@@ -322,19 +336,20 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
         BinMatrix* final=concat(*x_left,*non_effective,1);
         //printMatrix(*transpose(*final));
 
-        BinMatrix* new_guess=product(*transpose(*final),G);
+        BinMatrix *final_transpose = transpose(*final);
+        BinMatrix* new_guess=product(*final_transpose,G);
+        destroyMatrix(final_transpose);
         //printMatrix(*new_guess);
         BinMatrix* test=sampleFromMatrix(gamma->data,k,*new_guess,MATRIX_SAMPLE_COLUMNS);
 
-        /*printMatrix(*test);
-        printMatrix(m);*/
-
+        /*
+        // DEBUG
         if ( compareVectors(*test,m)!=0){
 
             puts("Cuur");
             printMatrix(*transpose(*curr_trial));
 
-            puts("coparison");
+            puts("comparison");
             printMatrix(*last_target);
             printMatrix(*ref);
 
@@ -359,8 +374,10 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
             printSet(gamma);
             printMatrix(G);
             printMatrix(*G_gamma);
+            destroyMatrix(new_guess);
             exit(1);
         }
+        */
 
         int new_dist = HammingDistance(b,*new_guess);
         //printf("NEW DIST %d\n",new_dist);
@@ -669,7 +686,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     int best_dist=HammingDistance(b,*decoded);
 
     int e2=1;compute_e2(n,k,y,e,b_param,DELTA_0);
-    int tot_iterations=computeLn(n,k,e);
+    unsigned long int tot_iterations=computeLn(n,k,e);
 
     printf("--------------------------\n"
            "Best distance starts at %d\n",best_dist);
@@ -678,7 +695,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     printf("\t-e1:%d\n",e);
     printf("\t-e2:%d\n",e2);
     printf("\t-b:%d\n",b_param);
-    printf("Total iterations:%d\n",tot_iterations);
+    printf("Total iterations:%ld\n",tot_iterations);
 
     // Compute the syndrome
     BinMatrix* synd = product(b,*H_t);
@@ -700,7 +717,7 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
     // Iterate Ln(k,e) times
     for (i=0;i<tot_iterations;++i){
         
-        printf("\r--------------------------ITERATION: %d", i);
+        printf("\r--------------------------ITERATION: %d\n", i);
         fflush(stdout);
         // generate the information set
 
@@ -817,8 +834,8 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             BinMatrix* m = vectorSum(*b_Gamma,*ul);
 
             // Iterate over the vectors c' whose projection on Gamma equals m
-            generateAllProjections(G,H,*m,b,gamma,&decoded,&best_dist);
             begin=clock();
+            generateAllProjections(G,H,*m,b,gamma,&decoded,&best_dist);
             //loopOverProjectionOnGamma(gamma,*m,H,b,&decoded,&best_dist);
             end=clock();
             PRINTF("Looping over Projection on KGamma took %ld ticks\n",end-begin);

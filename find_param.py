@@ -4,15 +4,14 @@ from scipy.special import binom
 import sys
 
 def H_2(x):
-    #print("Log of",x)
     return (0-x*log(x,2)-(1-x)*log(1-x,2))
 
 def epsilon1(R,alpha,delta_0):
-    expr=H_2(delta_0)-R*H_2(alpha/R)-(1-R)*H_2( (delta_0-alpha)/(1-R) )
+    expr = H_2(delta_0)-R*H_2(alpha/R)-(1-R)*H_2( (delta_0-alpha)/(1-R) )
     return expr
 
 def epsilon2(R,v,alpha,b,delta_0):
-    expr=R*H_2(alpha/R)+v*H_2( (delta_0-alpha)/(1-R - (b-1)*v ) )
+    expr = R*H_2(alpha/R)+v*H_2( (delta_0-alpha)/(1-R - (b-1)*v ) )
     return expr
 
 def complexity(R,delta_0,alpha,b,v):
@@ -20,7 +19,7 @@ def complexity(R,delta_0,alpha,b,v):
     return expr
 
 def compute_e2(delta_0,alpha,b,v,y):
-    expr= ((delta_0-alpha)/(1-R-(b-1)*v))*y
+    expr = ((delta_0-alpha)/(1-R-(b-1)*v))*y
     return expr
 
 def computeIterations(n,k,e,GV_dist):
@@ -57,7 +56,7 @@ def search_parameters(n,k,d):
     }
 
     #else:
-     #   raise Error
+    #   raise Exception
 
     for e1 in range(e1_low,e1_high+1):
         for y in range(y_low,y_high+1):
@@ -99,7 +98,7 @@ print("CODE RATE",R)
 if R == 0.5:
     delta_0 =n* 0.11002786443835955
 else:
-    raise Error
+    raise Exception
 
 
 search_parameters(n,k,12)
