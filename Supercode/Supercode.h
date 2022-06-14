@@ -308,7 +308,7 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     PRINTF("Inversion took: %d\n",end-begin);
 
     int curr_as_int = 0;
-    int final=(1<< (k-eff_dim));
+    int final_int=(1<< (k-eff_dim));
 
     int last_index = k;
 
@@ -324,7 +324,7 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     // The all-bu-last columns of the reduced matrix, i.e. we exclude the column that represents m
     BinMatrix* reduced_left=sampleFromMatrix(first_indexs,k,*reduced,MATRIX_SAMPLE_COLUMNS);
 
-    while (curr_as_int < final)
+    while (curr_as_int < final_int)
     {
 
         /*
@@ -372,6 +372,7 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
         BinMatrix* non_effective= sampleFromMatrix(non_eff_indexes,k-eff_dim,*curr_trial,MATRIX_SAMPLE_ROWS);
 
         // Concatenating with the last part of curr_trial yields the full solutions
+        BinMatrix* final=concat(*x_left,*non_effective,1);
 
         // Now generate the guess corresponding to full
         BinMatrix *final_transpose = transpose(*final);
