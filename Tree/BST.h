@@ -13,6 +13,13 @@
 #define BST_COMPARISON_INT 0
 #define BST_COMPARISON_BINMATRIX 1
 
+/**
+ * @brief This struct was implemented to handle Binary Search Trees
+ * whose payload and keys can be any sort of data. We implemented
+ * our functions to handle int and BinaryMatrix types, although we
+ * only use BinaryMatrix for the actual project
+ * 
+ */
 typedef struct _BSTNode
 {
     void* key;
@@ -26,7 +33,7 @@ typedef struct _BSTNode
 typedef BSTNode* BST;
 
 /**
- * @brief Compare two key stored in the node of a BST
+ * @brief Compare two keys stored in the node of a BST
  * 
  * @param d1 First value to compare
  * @param d2 Second value to compare
@@ -66,6 +73,12 @@ int compareData(void* d1, void* d2, int type){
 
 }
 
+/**
+ * @brief Frees allocated memory for a tree
+ * 
+ * @param tree The tree to free
+ * @param type Type of data stored
+ */
 void destroyTree(BST* tree, int type){
 
     BST temp = *tree;
@@ -189,6 +202,12 @@ int addNode(void* key,void* data, BST* tree, int type){
     return BST_RES_ERROR_NULL_PTR;
 }
 
+/**
+ * @brief Pretty prints a single node
+ * 
+ * @param n The node
+ * @param type Type of contained data
+ */
 void printNode(BSTNode n, int type){
 
     puts("######## NODE ########");
@@ -215,7 +234,7 @@ void printNode(BSTNode n, int type){
 }
 
 /**
- * @brief Prints a BST
+ * @brief Pretty prints a BST
  * 
  * @param tree The tree to print
  */

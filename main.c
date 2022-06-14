@@ -9,7 +9,7 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
     int failed=0, success=0, acceptable=0;
     BinMatrix* zero=zeroVector(info->n/2);
 
-    for (int i=0;i<iterations;++i){
+    for (int i=0; i<iterations; ++i){
 
         int seed=rand();
         BinMatrix *codeword = generateCodeword(G, seed);
@@ -48,7 +48,6 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
         destroyMatrix(decoded);
         destroyMatrix(syn);                
     }
-
     destroyMatrix(zero);
 
     printf("Successful decodings: %d/%d\n",success,iterations);
@@ -71,16 +70,16 @@ int main(){
     BinMatrix* H = concat(*I,*A,0);
     BinMatrix* H_t = transpose(*H);
     BinMatrix* G = concat(*info->H_t,*I,0);
-    
 
     //printMatrix(*H);
-    puts("GENERATOR MATRIX\n");
-    printMatrix(*G);
+    //puts("GENERATOR MATRIX\n");
+    //printMatrix(*G);
     destroyMatrix(A);
     destroyMatrix(I);
 
     BinMatrix *codeword = generateCodeword(G, seed);
     BinMatrix *error = generateError(info->n, info->w, seed);
+    puts("Generated error code");
     printMatrix(*error);
     BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
     //printMatrix(*receivedCodeword);

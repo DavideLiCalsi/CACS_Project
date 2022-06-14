@@ -1,6 +1,6 @@
 #ifndef BINMATRIX_H
 #define BINMATRIX_H
-
+#define N 50
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +31,12 @@
 #define indexOutOfBoundsPtr(m,i,j) (i>=m->rows && i<0 && j>=m->cols && j<0)
 #define isSquareMatrix(m) (m.cols==m.rows)
 #define isSquareMatrixPtr(m) (m->cols==m->rows)
+
+/**
+ * Macros to manage sizes
+ */
+#define ULONG_SIZE_BYTES sizeof(unsigned long)
+#define ULONG_SIZE_BITS 8*sizeof(unsigned long)
 
 struct BinMatrix{
     int rows;
@@ -83,10 +89,9 @@ int putElement(BinMatrix* m, int i, int j, int val){
 
     if ( indexWithinBoundsPtr(m,i,j) ){
 
-        int array_index= (m->cols * i + j) / (8*sizeof(unsigned long));
+        int array_index = (m->cols * i + j) / (8*sizeof(unsigned long));
         unsigned long array_selector = (m->cols * i + j) % (8*sizeof(unsigned long));
         array_selector = 8*sizeof(unsigned long) - array_selector - 1;
-        unsigned long selector = 1UL << array_selector;
 
         switch (val)
         {
@@ -138,8 +143,8 @@ void printMatrix(BinMatrix m){
  * @brief Compare two row vectors. Comparison is done
  * by interpreting the two vectors as binary integers
  *
- * @param v1
- * @param v2
+ * @param v1 The first rowvector
+ * @param v2 The second row vector
  * @return int 0 if the content is equal, 1 if v1>v2, -1 if v1<v2, 2 for error
  */
 int compareVectors(BinMatrix v1, BinMatrix v2){
@@ -337,7 +342,7 @@ BinMatrix* buildMatrix(int* array, int rows, int cols){
 
 
 /**
- * @brief return a copy of the input matrix
+ * @brief Returns a copy of the input matrix
  * 
  * @param matrix input matrix
  * @return BinMatrix* copy of the input matrix
@@ -578,27 +583,23 @@ unsigned char vectorProduct(BinMatrix v1, BinMatrix v2){
 
     int ulong_needed = ceil( (v1.cols*v1.rows*1.0) / ( 8*(sizeof(unsigned long)) ) );
     int j;
-    unsigned char res;
-    unsigned char res_test=0;
+    char res = 0;
 
-    for(int i=0; i<ulong_needed;++i){
+    for(int i=0; i<ulong_needed; ++i){
 
         unsigned long and = v1.data[i] & v2.data[i];
 
-        for (j=0,res=0; j< 8*sizeof(unsigned long); ++j){
+        bool condition = (i==(ulong_needed-1)) && (v1.cols%(8*sizeof(unsigned long))!= 0);
+        int stop = condition ? v1.cols%(8*sizeof(unsigned long)) : 8*sizeof(unsigned long);
+        for (j=0; j<stop; ++j){
 
-            res ^= (and >> j) & 1UL;
-            res_test ^= (and >> j) & 1UL;
+            res ^= (and >> (8*sizeof(unsigned long)-j-1) ) & 1;
         }
 
     }
-
-    /*if (res != res_test){
-        puts("ANOMALY");
-        printf("%d %d\n",res,res_test);
-        exit(0);
-    }*/
-    return res_test;
+    
+    
+    return res;
 }
 
 /**
@@ -626,7 +627,7 @@ BinMatrix* product(BinMatrix m1, BinMatrix m2){
 
             BinMatrix* row=getRow(m1,i);
             BinMatrix* column=getColumn(m2,j);
-            int val = vectorProduct( *row,*column);
+            int val = vectorProduct(*row,*column);
             destroyMatrix(row);
             destroyMatrix(column);
             if( putElement(res,i,j,val) != MATRIX_SUCCESS)
@@ -739,9 +740,12 @@ int addRows(BinMatrix* m, int r1, int r2){
 }
 
 /**
- * @brief Computes the determinant but inefficiently
+ * @brief Sums two rows,but inefficiently. More precisely,
+ * row_i <- row_i + row_j
  *
- * @param m
+ * @param m The target matrix
+ * @param i Index of the 1st row
+ * @param j Index of the 2nd row
  * @return char
  */
 char addRowsSlow(BinMatrix* m,int i, int j){
@@ -758,6 +762,13 @@ char addRowsSlow(BinMatrix* m,int i, int j){
 
 }
 
+/**
+ * @brief Swaps two rows, but inefficiently
+ * 
+ * @param m The target matrix
+ * @param i 1st row
+ * @param j 2nd row
+ */
 void swapRowsSlow(BinMatrix* m, int i, int j){
     int col_index=0;
     int row_len=m->cols;
@@ -772,10 +783,15 @@ void swapRowsSlow(BinMatrix* m, int i, int j){
     }
 }
 
+/**
+ * @brief Implements the Gauss-Jordan elimination
+ * 
+ * @param m The matrix to process
+ * @return BinMatrix* The input matrix after transformation
+ */
 BinMatrix* GaussElimination(BinMatrix m){
     int i,j,k;
 
-   // puts("BEGIN DET");
     for (j=0; j<m.cols;++j){
 
         k=j;
@@ -792,7 +808,8 @@ BinMatrix* GaussElimination(BinMatrix m){
         }
 
         /*
-        Sum rows to bring the matrix in inferior triangular form
+        Sum rows to bring the matrix in inferior triangular form,
+        but only in the j-th column.
         */
         for (i=j+1; i<m.rows;++i ){
 
@@ -820,7 +837,8 @@ char determinant(BinMatrix m){
         printf("Matrix of size (%d,%d) is not a square matrix\n", m.rows,m.cols);
         return MATRIX_INVALID_ELEMENT;
     }
-   // puts("BEGIN DET");
+
+    // First we reduce the matrix with Gauss-Jordan elim.
     for (j=0; j<m.cols;++j){
 
         k=j;
@@ -836,8 +854,6 @@ char determinant(BinMatrix m){
             }
         }
 
-     //   printf("Fixed column %d\n",j);
-
         /*
         Sum rows to bring the matrix in inferior triangular form
         */
@@ -850,8 +866,6 @@ char determinant(BinMatrix m){
         }
     }
 
-    //printf("DONE DET\n");
-    //printMatrix(m);
     /*
     If there is a 0 on the main diagonal, the determinant is 0
     */
@@ -860,6 +874,7 @@ char determinant(BinMatrix m){
             return 0;
     }
 
+    // Else it's 1
     return 1;
 }
 
@@ -879,10 +894,10 @@ BinMatrix* inverse(BinMatrix m){
         return NULL;
     }
 
-    // Build the augmented matrix by concatenating the matrix to invert
-    // and the Identity
-    BinMatrix* augmented = concat(m,*identityMatrix(m.rows),0);
-    //printMatrix(*augmented);
+    // Build the augmented matrix by concatenating the matrix to invert and the Identity
+    BinMatrix *identity = identityMatrix(m.rows);
+    BinMatrix *augmented = concat(m,*identity,0);
+    destroyMatrix(identity);
 
     for (j=0; j<m.cols;++j){
 
@@ -922,8 +937,6 @@ BinMatrix* inverse(BinMatrix m){
         }
     }
 
-    //printMatrix(*augmented);
-
     BinMatrix* inv = (BinMatrix*) ( malloc(sizeof(BinMatrix)) );
     inv->rows=m.rows;
     inv->cols=m.cols;
@@ -932,7 +945,6 @@ BinMatrix* inverse(BinMatrix m){
     /*
     This loop copies bits one by one from the augmented matrix
     to the matrix to return.
-    NOTE: this is highly inefficient, should be optimized later
     */
     for (i=0; i<m.rows;++i){
 
@@ -942,17 +954,9 @@ BinMatrix* inverse(BinMatrix m){
         }
     }
 
-    //destroyMatrix(augmented);
+    // free memory
+    destroyMatrix(augmented);
 
-    BinMatrix* check=product(*inv,m);
-
-    /*if (!compareMatrices(*check,*identityMatrix(m.rows)) ){
-        puts("ERROR");
-        printMatrix(*check);
-        printMatrix(*inv);
-        printMatrix(*augmented);
-        exit(0);
-    }*/
     return inv;
 }
 
@@ -965,7 +969,6 @@ BinMatrix* inverse(BinMatrix m){
  * @param mode Specify what to sample, rows or columns
  * @return BinMatrix* Matrix of the sampled rows(columns), NULL for error
  *
- * TODO: this implementation is very naive and slow. Optimize later
  */
 BinMatrix* sampleFromMatrix(int* indexes, int len, BinMatrix m, int mode){
 
@@ -1062,8 +1065,7 @@ int HammingDistance(BinMatrix m1, BinMatrix m2){
  * @brief Computes the hamming weight of a row vector
  *
  * @param m1
- * @param m2
- * @return int The hamming weight
+ * @return int The hamming weight of m1
  */
 int HammingWeight(BinMatrix m1){
 

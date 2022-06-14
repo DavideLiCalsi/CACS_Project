@@ -7,7 +7,7 @@
 #include <time.h>
 #include "../Utilities/debug.h"
 
-unsigned int binCoefficients[200][200];
+double binCoefficients[200][200];
 int valid[200][200];
 
 /**
@@ -15,9 +15,9 @@ int valid[200][200];
  * 
  * @param n 
  * @param k 
- * @return int 
+ * @return double 
  */
-unsigned int binomialCoeff(unsigned int n, unsigned int k){
+double binomialCoeff(unsigned int n, unsigned int k){
     // Base Cases
     if (k > n){
         valid[n][k]=1;
@@ -41,7 +41,7 @@ unsigned int binomialCoeff(unsigned int n, unsigned int k){
         return binCoefficients[n][k];
  
     // Recur
-    unsigned int t1,t2;
+    double t1,t2;
 
     if (valid[n-1][k-1] == -1){
         t1=binomialCoeff(n - 1, k - 1);
@@ -81,13 +81,13 @@ void precomputeBinCoefficients(unsigned int n, unsigned int w){
         for (t = 1; t <= 100; t++)
             binCoefficients[m][t] = binCoefficients[m-1][t-1] + binCoefficients[m-1][t];
 
-
 }
 
 /**
  * @brief Finds the pairs (u,m) such that
  * the tables Xl and Xr have a size whose difference
- * is below threshold
+ * is below threshold.
+ * 
  * 
  * @param n The vectors length to be considered
  * @param t The maximum number of errors
@@ -119,16 +119,24 @@ void findEqualSize_u_m(int n, int t, float threshold, PairSet* E){
 
 }
 
+/**
+ * @brief This function is called by iterateOverM_vectors and is 
+ * used to algoritmically update an array of indexes. Each position
+ * in the array represents a position in the error vector that contains
+ * a 1. The algorithm updates this array in a way that allows us to generate
+ * all the error patterns with weight=u.
+ * 
+ * @param indexes The array of indexes
+ * @param moduli An array of moduli, used to update the indexes
+ * @param u The desired error's weight
+ * @return true If you have tried all the possible error patterns
+ * @return false Otherwise
+ */
 bool updateIndexes(int* indexes, int* moduli, int u){
 
     int i;
     int carry=1;
     bool clean=false;
-
-    /*puts("Before");
-    for(i=0;i<u;++i)
-        printf("%d",indexes[i]);
-    printf("\n");*/
 
     for (i=u-1; i >=0; --i){
 
@@ -151,19 +159,18 @@ bool updateIndexes(int* indexes, int* moduli, int u){
 
     }
 
-    /*for(i=0;i<u;++i)
-        printf("%d",indexes[i]);
-    printf("\n");*/
-
     // Returns a bool flag saying if you should stop
     return !(indexes[0]==0 && indexes[u-1]==0);
 }
 
 /**
- * @brief Enumerates all the m-vectors with a number of 1s equals to u
+ * @brief Enumerates all the m-vectors with a number of 1s equals to u,
+ * computes their syndrome and stores both in a table
  * 
- * @param m 
- * @param u 
+ * @param m The vector's length
+ * @param u The desired error weight
+ * @param H_l_r The parity-check matrix to use to compute the syndrome
+ * @param X The table
  */
 void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
 
@@ -189,11 +196,20 @@ void iterateOverM_Vectors(int m, int u, BinMatrix H_l_r, BST* X){
         return;
     }
 
+    /*
+    Initialize the arrays. 
+    Indexes <- {0,1,...,u-1}
+    Moduli <- {m-u+1,m-u+2,...,m}
+    */
     for (i=0;i<u;++i){
         indexes[i]=i;
         moduli[i]=m-(u-i)+1;
     }
 
+    /*
+    Iteratively generate all the error patterns with u errors,
+    compute the syndrome and store the pair in the target table
+    */
     do
     {
         for (i=0,j=0;i<m;++i){
@@ -246,9 +262,9 @@ int intToBinVector(int x, int* v, int len){
 /**
  * @brief Obtains the left syndrome from the right syndrome and the full syndrome
  * 
- * @param s 
- * @param sr 
- * @return BinMatrix* 
+ * @param s Full syndrome
+ * @param sr Right syndrome
+ * @return BinMatrix* Left syndrome
  */
 BinMatrix* getLeftSyndrome(BinMatrix s, BinMatrix sr){
 
@@ -340,15 +356,6 @@ void buildLeftTable(int m,int u, BinMatrix H, BST* Xl){
     BinMatrix* samples = sampleFromMatrix(indexes,m,H,MATRIX_SAMPLE_COLUMNS);
     BinMatrix* Hl = transpose(*samples);
 
-    /*for (i=0; i<pow(2,m);++i){
-
-        if ( intToBinVector(i,error_as_vector,m) != u )
-            continue;
-        BinMatrix* el = buildMatrix(error_as_vector,1,m);
-        BinMatrix* sl = product(*el,*Hl);
-        addNode((void*)sl, (void*) el, Xl,BST_COMPARISON_BINMATRIX);
-    }*/
-
     iterateOverM_Vectors(m,u,*Hl,Xl);
 
     destroyMatrix(samples);
@@ -401,51 +408,36 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
     BST Xl=NULL;
     BST Xr=NULL;
 
-    // First do the precomputation step
-    //printf("Starting the precomputation stage\n");
-
-    // Build the tables E(1),...,E(d)
-    /*for (t=1; t<=d;++t){
-        tables[t]=NULL;
-        findEqualSize_u_m(2*s.cols,t,3,&tables[t]);
-        //printf("Found E(%d)\n",t);
-    }*/
-
-    //printf("Precomputation stage complete!\n");
+    /* 
+    We can skip the precomputation step since we already know
+    the how to split the syndrome and the error.
+    */
 
     for (t=0; t<=d;++t){
-
-        //PairSet E = tables[t];
-        //printf("Trying t=%d\n",t);
 
         int i=0;
         while (i<=k && i<=t && t-i<=y)
         {   
-            // Get a (u,m) pair from E(t)
-            //Pair* pair=PairSet_pop(&E);
-            u=i;//pair->x;
-            m=k;//pair->y;
+            /*
+            We always split a syndrome of length k+y into
+            s_l of length k and s_r of length y.
+            */
+            u=i;
+            m=k;
 
-            //PairSet_destroy(pair);
-
-            //printf("Trying the values u=%d,m=%d,t=%d\n",u,m,t);
-            // Build the two tables
-            //printf("Building the table X_left...");
             buildLeftTable(m,u,H,&Xl);
-            //printf("DONE!\nBuilding the table X_right...");
             buildRightTable(m,t-u,y+k,H,&Xr);
-            
-            //printf("DONE!\n");
 
             if ( inspectTables(Xr,Xl,s,left,right,e1,e2) ){
-                
-                /* do nothing */;
+
 
                 // If you found the two errors, build the full error and return it
                 PRINTF("Found code!\n");
                 PRINTVLIST(*left);
-                //VectorList_print(er);
-                //return;
+                destroyTree(&Xl,BST_COMPARISON_BINMATRIX);
+                destroyTree(&Xr,BST_COMPARISON_BINMATRIX);
+                return;
+
             }
 
             destroyTree(&Xl,BST_COMPARISON_BINMATRIX);
@@ -456,8 +448,6 @@ void SplitSyndrome(BinMatrix H, BinMatrix s, int d, VectorList* left,VectorList*
             ++i;
         }
     }
-
-    //free(tables);
 }
 
 #endif
