@@ -706,36 +706,63 @@ int addRows(BinMatrix* m, int r1, int r2){
     // TODO add check of row indexes
     int row_len=m->cols;
 
-    unsigned long bitmask=0, bitmask1, bitmask2;
+    int row_mod = row_len % (8*sizeof(unsigned long));
 
-    for (int i=0;i<row_len;++i){
-        bitmask |= (1<<i);
+    /*
+    Identify each row with a tuple (ulong_index,bit_index)
+    */
+    int ulong_index1 = ceil( row_len*r1*1.0 / (8*sizeof(unsigned long)));
+    int ulong_index2 = ceil( row_len*r2*1.0 / (8*sizeof(unsigned long)));
+    int bit_index1 = (row_len*r1) % (8*sizeof(unsigned long));
+    int bit_index2 = (row_len*r2) % (8*sizeof(unsigned long));
+
+    /*
+    In the general case, a row will consist of n unsigned longs.
+    We also only consider a subset of the bits of the first and last unsigned longs.
+    1st unsig. long: consider only the last (8*sizeof(unsigned long)) - row_mod bits
+    2nd unsig long: consider only the first row_mod bits
+    */
+
+    for (int cursor=0; cursor<row_len;++cursor){
+
+        if ( cursor <= (8*sizeof(unsigned long)) ){
+            // We are processing the first unsigned long
+            unsigned long mask;
+            mask=0;
+
+            for (int i=0;i<bit_index1;++i){
+                mask |= 1UL << i;
+            }
+            m->data[ulong_index1]^= (mask & m->data[ulong_index2]);
+
+            cursor+=(8*sizeof(unsigned long)) - row_mod;
+            continue;
+        }
+
+        if (row_len-cursor <= row_mod ){
+            // We are processing the last unsigned long
+            // We are processing the first unsigned long
+            unsigned long mask;
+            mask=0;
+
+            int new_ulong_index1= ceil( (ulong_index1*(8*sizeof(unsigned long)) + bit_index1 + cursor)*1.0 / (8*sizeof(unsigned long)) );
+            int new_ulong_index2= ceil( (ulong_index2*(8*sizeof(unsigned long))+ bit_index2 + cursor)*1.0 / (8*sizeof(unsigned long)) );
+
+            for (int i=0;i<bit_index1;++i){
+                mask |= 1UL << (8*sizeof(unsigned long))-1-i;
+            }
+            m->data[new_ulong_index1]^= (mask & m->data[new_ulong_index2]);
+
+            cursor+=(8*sizeof(unsigned long)) - row_mod;
+            continue;
+        }
+
+        // You are processing an intermediate unsigned long
+        int new_ulong_index1= ceil( (ulong_index1*(8*sizeof(unsigned long)) + bit_index1 + cursor)*1.0 / (8*sizeof(unsigned long)) );
+        int new_ulong_index2= ceil( (ulong_index2*(8*sizeof(unsigned long))+ bit_index2 + cursor)*1.0 / (8*sizeof(unsigned long)) );
+        m->data[new_ulong_index1] ^= m->data[new_ulong_index2];
+        cursor+=8*sizeof(unsigned long);
     }
-
-    int r1_array_index = row_len*(r1) / (8*sizeof(unsigned long));
-    int r2_array_index = row_len*(r2) / (8*sizeof(unsigned long));
-    int r1_bit_index = (row_len*r1) % (8*sizeof(unsigned long));
-    int r2_bit_index = (row_len*r2) % (8*sizeof(unsigned long));
-
-    bitmask1 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r1_bit_index );
-    bitmask2 = bitmask << ( (8*sizeof(unsigned long)) - row_len - r2_bit_index );
-
-    // Extract the two rows
-    unsigned long exctracted_row1 = m->data[r1_array_index] & bitmask1;
-    unsigned long exctracted_row2 = m->data[r2_array_index] & bitmask2;
-
-    if (r1 < r2 )
-    {
-        exctracted_row2 = exctracted_row2 << row_len*(r2-r1);
-    }
-
-    if (r2_bit_index < r1_bit_index)
-    {
-        exctracted_row2 = exctracted_row2 >> row_len*(r1-r2);
-        exctracted_row1 = exctracted_row1 << row_len*(r1-r2);
-    }
-
-    m->data[r1_array_index] ^= exctracted_row2;
 
 }
 
