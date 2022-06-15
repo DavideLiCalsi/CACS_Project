@@ -30,6 +30,7 @@
   "files.associations": {
     "stdbool.h": "c",
     "limits": "cpp",
-    "binarymatrix.h": "c"
+    "binarymatrix.h": "c",
+    "cmath": "cpp"
   }
 }

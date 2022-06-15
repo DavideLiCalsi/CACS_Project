@@ -58,7 +58,6 @@ Info *readData(char *path){
 
     // read "# s^transpose"
     fgets(comment, 100, file_ptr);
-    printf("%s", comment);
 
     int *s_array = (int *)malloc(sizeof(int)*n/2);
     for (int i=0; i<n/2; i++){
