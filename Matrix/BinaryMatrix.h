@@ -1,6 +1,5 @@
 #ifndef BINMATRIX_H
 #define BINMATRIX_H
-#define N 50
 
 #include <stdio.h>
 #include <stdlib.h>

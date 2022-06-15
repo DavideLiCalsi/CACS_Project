@@ -1,5 +1,5 @@
 from sympy import *
-from math import ceil, floor
+from math import ceil, floor, comb
 from scipy.special import binom
 import sys
 
@@ -21,6 +21,19 @@ def complexity(R,delta_0,alpha,b,v):
 def compute_e2(delta_0,alpha,b,v,y):
     expr = ((delta_0-alpha)/(1-R-(b-1)*v))*y
     return expr
+
+def gilbertVashamovDistance(n, k, q):
+
+    y = pow(q, n-k);
+    distance = 1;
+    partial_sum = 0;
+
+    while(partial_sum <= y):
+        distance += 1
+        partial_sum += comb(n,distance-1)*pow(q-1,distance-1);
+    
+    return distance
+
 
 def computeIterations(n,k,e,GV_dist):
     expr= n*log(n,2)*( binom(n,GV_dist)/( binom(k,e)*binom(n-k,GV_dist-e) ) )
@@ -55,9 +68,6 @@ def search_parameters(n,k,d):
         'b':-1
     }
 
-    #else:
-    #   raise Exception
-
     for e1 in range(e1_low,e1_high+1):
         for y in range(y_low,y_high+1):
 
@@ -72,7 +82,7 @@ def search_parameters(n,k,d):
                     print("Trying y:",y,"e1:",e1,"b:",b, end=" Complexity: ")
                     new_complexity=complexity(R,delta_0,alpha,b,v)
                     print(N(new_complexity), end=" Iterations: ")
-                    print( ceil( N(computeIterations(n,k,e1,14))) )
+                    print( ceil( N(computeIterations(n,k,e1,d))) )
 
                     if best_complexity==-1 or new_complexity < best_complexity:
                         best_complexity=N(new_complexity)
@@ -88,17 +98,29 @@ def search_parameters(n,k,d):
     best_v=best_param['y']/n
     print("\te2:",compute_e2(delta_0,best_alpha,b,best_v,best_param['y']))
     print("Expected complexity:", N(complexity(0.5,delta_0,best_alpha,best_param['b'],best_v)))
-    print("Expected number of iterations:", ceil( N(computeIterations(n,k,best_param['e1'],9))) )
+    print("Expected number of iterations:", ceil( N(computeIterations(n,k,best_param['e1'],d))) )
 
 
-n=int(sys.argv[1])
-k=n//2
-R=k/n
-print("CODE RATE",R)
-if R == 0.5:
-    delta_0 =n* 0.11002786443835955
-else:
-    raise Exception
 
+if __name__ == "__main__":
 
-search_parameters(n,k,12)
+    USAGE = "usage: python find_param <n>"
+    EXAMPLE =  "example: python find_param 30"
+
+    args = sys.argv[1:]
+
+    if len(args) < 1:
+        print(USAGE)
+        print(EXAMPLE)
+        sys.exit(-1)
+
+    n = int(args[0])
+    k=n//2
+    R=k/n
+    print("CODE RATE",R)
+    if R == 0.5:
+        delta_0 =n* 0.11002786443835955
+    else:
+        raise Exception("Assumption: n == 2*k")
+
+    search_parameters(n, k, gilbertVashamovDistance(n, k, 2) )

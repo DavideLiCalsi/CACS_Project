@@ -1,3 +1,0 @@
-break BinaryMatrix.h:590
-  condition $bpnum i==ulong_needed-1
-
