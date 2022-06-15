@@ -6,7 +6,7 @@
 
 #define DELTA_0 0.11002786443835955
 
-clock_t begin,end;
+clock_t begin, end;
 
 /**
  * @brief Computes the e2 parameters
@@ -191,8 +191,7 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     //Let's check the effective number of vectors that we'll need to try
     int eff_dim=0,i=0,j=0;
 
-    // At the end of this loop, eff_dim will contain the rank
-    // of the G(gamma) matrix
+    // At the end of this loop, eff_dim will contain the rank of the G(gamma) matrix
     do{
 
         if (getElement(*reduced,i,i)!=1)
@@ -208,7 +207,7 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
         return;
 
     /*
-    If this condition holds, then the original matix was invertible. Thus
+    If this condition holds, then the original matix was invertible. Thus,
     you can simply invert gamma G(gamma) and find the only solution x.
     */
     if (eff_dim==k){
@@ -281,17 +280,17 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
 
     // Initialize curr_trial to k zeros
     BinMatrix *zero = zeroVector(k);
-    BinMatrix* curr_trial=transpose(*zero);
+    BinMatrix* curr_trial = transpose(*zero);
     destroyMatrix(zero);
 
     // The indexes from 0 to eff_dim-1
-    int* indexes= (int*) (malloc(sizeof(int)*(eff_dim)));
+    int* indexes = (int*) (malloc(sizeof(int)*(eff_dim)));
 
     // The indexes fro eff_dim to k
-    int* non_eff_indexes= (int*) (malloc(sizeof(int)*(k-eff_dim)));
+    int* non_eff_indexes = (int*) (malloc(sizeof(int)*(k-eff_dim)));
 
     for (int i=0;i<eff_dim;++i)
-        indexes[i]=i;
+        indexes[i] = i;
 
     for (int i=0;i<k-eff_dim;++i)
         non_eff_indexes[i]=eff_dim+i;
@@ -299,16 +298,16 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     // Invert the matrix corresponding to the first eff_dim columns of the reduced matrix
     BinMatrix* invertible=sampleFromMatrix(indexes,eff_dim,*reduced,MATRIX_SAMPLE_COLUMNS);
     old=invertible;
-    invertible=sampleFromMatrix(indexes,eff_dim,*invertible,MATRIX_SAMPLE_ROWS);
+    invertible = sampleFromMatrix(indexes,eff_dim,*invertible,MATRIX_SAMPLE_ROWS);
     destroyMatrix(old);
 
-    begin=clock();
-    BinMatrix* inv=inverse(*invertible);
+    begin = clock();
+    BinMatrix* inv = inverse(*invertible);
     end=clock();
     PRINTF("Inversion took: %d\n",end-begin);
 
     int curr_as_int = 0;
-    int final_int=(1<< (k-eff_dim));
+    int final_int = (1<< (k-eff_dim));
 
     int last_index = k;
 
@@ -316,12 +315,12 @@ void generateAllProjections(BinMatrix G, BinMatrix H, BinMatrix m, BinMatrix b, 
     BinMatrix* new_m = sampleFromMatrix(&last_index,1,*reduced,MATRIX_SAMPLE_COLUMNS);
 
     // The indexes from 0 to k-1
-    int* first_indexs=(int*) malloc(sizeof(int)*k);
+    int* first_indexs = (int*)malloc(sizeof(int)*k);
 
     for(int i=0;i<k;++i)
         first_indexs[i]=i;
 
-    // The all-bu-last columns of the reduced matrix, i.e. we exclude the column that represents m
+    // The all-but-last columns of the reduced matrix, i.e. we exclude the column that represents m
     BinMatrix* reduced_left=sampleFromMatrix(first_indexs,k,*reduced,MATRIX_SAMPLE_COLUMNS);
 
     while (curr_as_int < final_int)
@@ -615,12 +614,14 @@ BinMatrix *SupercodeDecoding(BinMatrix G, BinMatrix H, BinMatrix b, int n, int k
             temp=temp->next;
         }
         
+        // free memory
         destroyMatrix(b_Gamma);
         destroySet(gamma);
         VectorList_destroy(&KGamma);
         free(K);
     }
 
+    puts("");
     destroyMatrix(H_t);
     destroyMatrix(synd);
     destroySet(n_set);

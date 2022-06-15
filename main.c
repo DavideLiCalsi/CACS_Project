@@ -12,6 +12,8 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
     for (int i=0; i<iterations; ++i){
 
         int seed=rand();
+
+        // generate original codeword, error and received codeword
         BinMatrix *codeword = generateCodeword(G, seed);
         BinMatrix *error = generateError(info->n, info->w-2, seed);
         BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
@@ -41,6 +43,7 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
                 failed++;
             }
         }
+
         // free memory
         destroyMatrix(codeword);
         destroyMatrix(error);
@@ -50,58 +53,49 @@ double run_test(Info* info,BinMatrix* G, BinMatrix* H, BinMatrix* H_t, int e, in
     }
     destroyMatrix(zero);
 
-    printf("Successful decodings: %d/%d\n",success,iterations);
-    printf("Acceptable decodings: %d/%d\n",acceptable,iterations);
-    printf("Failed decodings: %d/%d\n",failed,iterations);
+    printf("Successful decodings: %d/%d\n", success, iterations);
+    printf("Acceptable decodings: %d/%d\n", acceptable, iterations);
+    printf("Failed decodings: %d/%d\n", failed, iterations);
 
     return success*1.0/iterations;
 }
 
 int main(){
 
+    // set random seed
     srand(time(NULL));
-    int seed = rand();   
+    int seed = rand();  
+
+    // get general information: n, seed, w (minimum distance), H_t (without identity matrix)
     char path[100] = "./Utilities/info.txt";
     Info *info = readData(path);
 
+    // compute actual parity matrix H and related generator matrix G
     BinMatrix* A = transpose(*info->H_t);
     BinMatrix* I = identityMatrix((info->n)/2);
 
     BinMatrix* H = concat(*I,*A,0);
     BinMatrix* H_t = transpose(*H);
-    BinMatrix* G = concat(*info->H_t,*I,0);
+    BinMatrix* G = concat(*info->H_t, *I,0);
 
-    //printMatrix(*H);
-    //puts("GENERATOR MATRIX\n");
-    //printMatrix(*G);
-    destroyMatrix(A);
-    destroyMatrix(I);
-
-    BinMatrix *codeword = generateCodeword(G, seed);
-    BinMatrix *error = generateError(info->n, info->w, seed);
-    puts("Generated error code");
-    printMatrix(*error);
-    BinMatrix *receivedCodeword = vectorSum(*codeword, *error);
-    //printMatrix(*receivedCodeword);
-
-    BinMatrix *syndrome = product(*receivedCodeword, *H_t);
-    //printMatrix(*syndrome);
-
+    // compute needed binomial coefficients only once
     precomputeBinCoefficients(info->n,(info->n)/2);
 
-    int e=3,y=1,b=50;
-    run_test(info,G,H,H_t,e,y,b,1);
+    // set parameters found through "find_param.py"
+    int e=1,y=1,b=2;
 
-    //printf("%d--%d--%d", HammingWeight(*codeword), HammingWeight(*error), HammingWeight(*receivedCodeword));
+    // run test "iterations" times
+    int iterations = 1;
+    run_test(info, G, H, H_t, e, y, b, iterations);
 
+
+    // free memory
+    destroyMatrix(A);
+    destroyMatrix(I);
     destroyInfo(info);
     destroyMatrix(H);
     destroyMatrix(H_t);
     destroyMatrix(G);
-    destroyMatrix(syndrome);
-    destroyMatrix(codeword);
-    destroyMatrix(receivedCodeword);
-    destroyMatrix(error);
     
     return 0;
 }

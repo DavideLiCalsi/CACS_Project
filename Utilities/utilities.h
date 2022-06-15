@@ -43,7 +43,6 @@ int gilbertVashamovDistance(int n, int k, int q){
  */
 unsigned long int computeLn(int n, int k, int e){
 
-    //int GV_distance = 12;
     int GV_distance = gilbertVashamovDistance(n, k, 2);
     
     double result_d = (n*log(n)/log(2)) * binomialCoeff(n,GV_distance) /  (binomialCoeff(k,e) * binomialCoeff(n-k,GV_distance-e) );
@@ -167,7 +166,7 @@ BinMatrix* generateCodeword(BinMatrix *G, int seed){
     Set* G_rows_index = getDistinctRandomNumbers(G_rows, num_G_rows, seed); // indeces of the G's rows to select
     destroySet(G_rows);
     
-    // generate the codeword
+    // generate the codeword summing random Generator matrix's rows
     BinMatrix *codeword = getRow(*G, G_rows_index->data[0]);
     
     BinMatrix *tmp, *tmp2;
@@ -220,80 +219,5 @@ BinMatrix *generateError(int n, int w, int seed){
     free(error_array);
     return error;
 }
-
-typedef struct _allBinaryString{
-    int **binaryStrings;
-    int index;
-}AllBinaryStrings;
-
-
-AllBinaryStrings *buildAllBinaryStrings(int lenStrings){
-    AllBinaryStrings *res = (AllBinaryStrings *)malloc(sizeof(AllBinaryStrings));
-
-    res->binaryStrings = (int **)malloc(sizeof(int *)*pow(2,lenStrings));
-    for(int i=0; i<pow(2,lenStrings); i++)
-        res->binaryStrings[i] = (int *)malloc(sizeof(int)*lenStrings);
-    res->index = 0;
-
-}
-
-
-void generateAllBinaryStrings(int n, int arr[], int i, AllBinaryStrings *res){
-    if (i == n) {
-        int *copy = (int *)malloc(sizeof(int)*n);
-        for (int j=0; j<n; j++)
-            copy[j] = arr[j];
-        res->binaryStrings[res->index] = copy;
-        res->index += 1;
-        return;
-    }
- 
-    // First assign "0" at ith position
-    // and try for all other permutations
-    // for remaining positions
-    arr[i] = 0;
-    generateAllBinaryStrings(n, arr, i + 1, res);
- 
-    // And then assign "1" at ith position
-    // and try for all other permutations
-    // for remaining positions
-    arr[i] = 1;
-    generateAllBinaryStrings(n, arr, i + 1, res);
-}
-
-
-/**
- * @brief generate all the admissible codeword
- * 
- * @param G Generator matrix
- * @return BinMatrix** Array of all the admissible codewords
- */
-BinMatrix **generateAllCodeword(BinMatrix *G){
-
-    int k = G->rows;
-    BinMatrix **allCodewords = (BinMatrix **)malloc(sizeof(BinMatrix *));
-
-    int *array = (int *)malloc(sizeof(int)*k);
-    for(int i=0; i<k; i++)
-        array[i] = i;
-    Set *set = buildSet(array, k);
-    free(array);
-
-    AllBinaryStrings *allBinaryStrings = buildAllBinaryStrings(k);
-    
-    generateAllBinaryStrings(k, set->data, 0, allBinaryStrings);
-
-    for (int i=0; i<pow(2,k); i++){
-        for (int j=0; j<k; j++)
-            printf("%d ", allBinaryStrings->binaryStrings[i][j]);
-        printf("\n");
-    }
-
-    return NULL;
-}
-
-
-
-
 
 #endif
