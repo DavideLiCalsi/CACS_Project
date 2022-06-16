@@ -104,8 +104,8 @@ def search_parameters(n,k,d):
 
 if __name__ == "__main__":
 
-    USAGE = "usage: python find_param <n>"
-    EXAMPLE =  "example: python find_param 30"
+    USAGE = "usage: python find_param.py <n>"
+    EXAMPLE =  "example: python find_param.py 30"
 
     args = sys.argv[1:]
 
